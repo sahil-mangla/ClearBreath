@@ -232,6 +232,8 @@ export default function App() {
 
             {result ? (
               <section className="panel panel--results" aria-label={t('results.aria')}>
+                {/* Squared so a modelled cut reads clearly in this small strip (the full-page haze keeps the plain scale). */}
+                {lowPower ? null : <Smoke variant="band" className="results__smoke" density={density ** 2} paused={paused} />}
                 <Results ref={resultsRef} result={result} hazeView={hazeView} onHazeView={setHazeView} density={base} />
               </section>
             ) : null}

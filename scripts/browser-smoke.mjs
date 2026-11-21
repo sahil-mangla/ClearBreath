@@ -139,6 +139,16 @@ check('Hindi plan text is labelled lang="hi" and says who translated it', (await
 await js(`[...document.querySelectorAll('.langs button')].find((b) => b.lang === 'en').click()`);
 await until(() => js(`document.querySelector('.actions__list')?.lang === 'en'`), 8000, 'the English plan');
 
+// 4c. The Today / With-this-plan switch visibly changes the haze in the results panel.
+const hazeOf = () => js(`(() => { const c = document.querySelector('.results__smoke'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let s = 0, n = 0; for (let i = 3; i < d.length; i += 4 * 41) { s += d[i]; n++; } return s / n; })()`);
+await js(`document.querySelector('input[name="hazeView"][value="usual"]').click()`);
+await sleep(4500);
+const hazeUsual = await hazeOf();
+await js(`document.querySelector('input[name="hazeView"][value="plan"]').click()`);
+await sleep(4500);
+const hazePlan = await hazeOf();
+check('the haze switch changes the smoke behind the results', hazePlan < hazeUsual * 0.85, `usual ${hazeUsual.toFixed(1)} vs plan ${hazePlan.toFixed(1)}`);
+
 // 5. Print layout keeps only the plan.
 await send('Emulation.setEmulatedMedia', { media: 'print' });
 check('print layout hides hero and smoke', (await js(`getComputedStyle(document.querySelector('.hero')).display`)) === 'none' && (await js(`getComputedStyle(document.querySelector('.smoke--page')).display`)) === 'none');

@@ -185,6 +185,9 @@ details[open] summary { margin-bottom: var(--space-xs); }
 
 /* ---------- Results ---------- */
 
+.panel--results { position: relative; isolation: isolate; overflow: clip; }
+/* Behind the plan's title and the Today/With-this-plan switch, so the switch visibly thins or thickens the air. */
+.results__smoke { top: 0; left: 0; height: 100%; z-index: -1; -webkit-mask-image: linear-gradient(to bottom, var(--color-paper), transparent 85%); mask-image: linear-gradient(to bottom, var(--color-paper), transparent 85%); }
 .results { display: grid; gap: var(--space-lg); }
 .results__title { font-size: var(--text-section); line-height: 1.1; letter-spacing: var(--tracking-display); outline-offset: 6px; }
 .exposure__note { color: var(--color-ink-2); font-size: var(--text-sm); }
