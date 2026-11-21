@@ -26,7 +26,12 @@ if (!chromePath) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const profile = mkdtempSync(path.join(tmpdir(), 'cb-smoke-'));
 const server = spawn(process.execPath, ['server.js'], { env: { ...process.env, PORT: String(SERVER_PORT), GEMINI_API_KEY: '' }, stdio: 'ignore' });
-const chrome = spawn(chromePath, ['--headless=new', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profile}`, '--no-first-run', '--hide-scrollbars', 'about:blank'], { stdio: 'ignore' });
+// CI runners run as a container user without a usable sandbox or GPU, so Chrome needs these flags there.
+const ciFlags = process.env.CI ? ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] : [];
+const chrome = spawn(chromePath, ['--headless=new', `--remote-debugging-port=${DEBUG_PORT}`, `--user-data-dir=${profile}`, '--no-first-run', '--hide-scrollbars', ...ciFlags, 'about:blank'], { stdio: ['ignore', 'ignore', process.env.CI ? 'inherit' : 'ignore'] });
+chrome.on('exit', (code) => {
+  if (!cleaned) console.error(`browser-smoke: Chrome exited early (code ${code})`);
+});
 let cleaned = false;
 const cleanup = () => {
   if (cleaned) return;
