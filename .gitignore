@@ -10,3 +10,6 @@ node_modules/
 .vscode/
 DESIGN.md
 PRODUCT.md
+docs/*.mp4
+docs/*.mov
+docs/*.webm
