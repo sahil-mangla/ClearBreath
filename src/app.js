@@ -33,7 +33,7 @@ const STATIC_FILES = {
   '/fonts/hanken-grotesk-latin-ext-wght-normal.woff2': ['fonts/hanken-grotesk-latin-ext-wght-normal.woff2', 'font/woff2'],
 };
 
-const SECURITY_HEADERS = {
+export const SECURITY_HEADERS = {
   'Content-Security-Policy':
     "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
   'X-Content-Type-Options': 'nosniff',
@@ -114,6 +114,7 @@ function sendJson(res, status, body, headers = {}) {
 
 /**
  * Build the HTTP server (not yet listening). Dependencies are injectable for testing.
+ * Pass `publicDir: null` to serve the API only (static hosting handled elsewhere, e.g. a CDN).
  */
 export function createApp({
   env = process.env,
@@ -121,7 +122,7 @@ export function createApp({
   now = () => new Date(),
   publicDir = PUBLIC_DIR,
 } = {}) {
-  const statics = loadStatic(publicDir);
+  const statics = publicDir ? loadStatic(publicDir) : new Map();
   const air = createAirClient({ fetchImpl });
   const llm = createLlm({
     apiKey: env.GEMINI_API_KEY,

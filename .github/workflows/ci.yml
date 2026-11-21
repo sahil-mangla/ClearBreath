@@ -1,0 +1,23 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the front end
+        run: npm run build
+      - name: The committed bundle matches its source
+        run: git diff --exit-code -- public
+      - name: Backend, front-end component and deploy-config tests
+        run: npm test
+      - name: Real-browser smoke test
+        run: npm run test:browser

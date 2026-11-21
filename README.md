@@ -39,7 +39,7 @@ npm start                # http://127.0.0.1:3000
 
 ```bash
 npm install              # only needed for development (React, esbuild, fonts)
-npm test                 # 123 tests, no network needed
+npm test                 # 140 tests (backend, front-end components, deploy config), no network needed
 npm run test:browser     # real headless Chrome smoke test (skips if Chrome is absent)
 npm run build            # rebuild public/app.js after editing web/
 ```
@@ -57,6 +57,21 @@ Set in `.env` (git-ignored, loaded by `server.js`) or the environment. Real envi
 | `RATE_LIMIT_PER_MIN` | `20` | Per-IP API requests per minute |
 | `TRUST_PROXY` | unset | Set to `1` behind a reverse proxy to read `X-Forwarded-For` |
 
+## Deploying to Vercel
+
+The repo is ready to import into Vercel as-is (framework preset: Other; the settings are in `vercel.json`).
+
+- **Static site:** `public/` is served from Vercel's CDN, with the same security headers the Node server sends (a test enforces that they match).
+- **API:** `api/index.js` runs the same request handler as `server.js` for `/api/*` and `/healthz`, in the Mumbai region (`bom1`) with a 30 second limit. Behind Vercel the rate limiter trusts `X-Forwarded-For`.
+- **Build gate:** Vercel runs `npm run build && npm test`, so a deploy that fails a test does not go live.
+- **Environment variables:** set `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`, `GEMINI_MAX_CALLS_PER_MIN`, `RATE_LIMIT_PER_MIN`) in the project settings. Without a key the app serves the rules-engine answers.
+- **CI:** `.github/workflows/ci.yml` builds, checks that the committed bundle matches `web/`, and runs the unit and real-browser tests on every push.
+- **Scaling:** caches and the rate limiter live in each function instance. Gemini's own per-minute ceiling and a spend quota on the Google project bound the cost.
+
+```bash
+npm i -g vercel && vercel        # preview deploy; `vercel --prod` to promote
+```
+
 ## Architecture
 
 ```
@@ -73,7 +88,9 @@ The design principle is that **the rules engine is the product and Gemini is an 
 
 | Path | Role |
 |---|---|
-| `server.js` | Entry point: loads `.env`, starts the server |
+| `server.js` | Local entry point: loads `.env`, starts the server |
+| `api/index.js` | Vercel entry point: the same handler, API only |
+| `vercel.json` | Vercel build, routing and header configuration |
 | `src/app.js` | HTTP routing, security headers, rate limiting, static serving (ETag, gzip) |
 | `src/validate.js` | Allow-list validation and sanitisation of every input |
 | `src/cities.js` | The fixed list of 22 supported cities |
@@ -125,13 +142,15 @@ All three asks from the brief are answered with India-specific content: CPCB AQI
 
 ### Testing
 
-123 tests with `node --test`, no network required:
+140 tests with `node --test`, no network required, split between the server, the front end and the deployment:
 
 - CPCB breakpoints and band edges; validation and injection strings; prototype-key and oversize inputs.
 - The rules engine per scenario, and the exposure model (including clean-air days and open versus closed cabins).
 - Air client: cache, de-duplication, timeouts, stale-while-error.
 - Gemini client: key placement, retry, budget, id filtering, clamping, rejection of ungrounded figures and links.
 - Determinism: identical requests give identical output; the Hindi catalogue is exhaustive over every action; translation validators reject wrong counts, missing Devanagari, markup and changed figures.
+- Front end: the real React components are bundled with esbuild and rendered to HTML in the test run (no browser, no extra dependencies). Tests check that every control has a bound label, fieldsets have legends, server field errors set `aria-invalid` with an inline message and a focusable summary, Hindi renders the same controls, the busy button stays focusable, and the animated headline is read once as plain text. Pure helpers (haze density, text timing, skyline, share text, low-power detection) and the English/Hindi string tables are tested too.
+- Deployment: `vercel.json` is checked (output folder, rewrites, build command, immutable font caching), the CDN's security headers must equal the server's, and the Vercel function is driven over a real socket (health, cities, 404, 405, 415, and rate limiting keyed on `X-Forwarded-For`).
 - HTTP integration: security headers, path traversal, fonts, `/api/air`, and the 400, 405, 413, 415, 429, 502 and 503 paths, with and without Gemini.
 
 `npm run test:browser` drives real headless Chrome with a mocked air reading and checks that the canvases mount and move, that no CSP violation fires, the severe-air strip, themed dropdowns, the Hindi toggle, the print layout, low-power and reduced-motion modes, and that nothing scrolls sideways at phone width.
