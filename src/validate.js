@@ -36,6 +36,15 @@ function oneOf(value, allowed, fallback, label, errors) {
   return value;
 }
 
+// The label each message starts with -> the form field it is about, so the page can mark that field invalid.
+const FIELD_OF_LABEL = { Adults: 'adults', Children: 'children', Seniors: 'seniors', Commute: 'commute', 'Commute distance': 'commuteKm', 'Cooking fuel': 'cooking', Heating: 'heating', 'Manual PM2.5': 'manualPm25' };
+
+/** The form field ids that the given validation messages are about (unknown messages map to nothing). */
+export function fieldsOf(messages) {
+  const labels = Object.keys(FIELD_OF_LABEL).sort((a, b) => b.length - a.length); // 'Commute distance' before 'Commute'
+  return [...new Set(messages.map((m) => FIELD_OF_LABEL[labels.find((l) => m.startsWith(`${l} `))]).filter(Boolean))];
+}
+
 /** @returns {{ok:true,value:object}|{ok:false,errors:string[]}} */
 export function validatePlanInput(body) {
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {

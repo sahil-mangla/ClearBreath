@@ -125,7 +125,7 @@ export default function App() {
       setStatus(translate(vals.lang, 'status.ready', { city: cityLabel(data.city, vals.lang) }));
     } catch (err) {
       setStatus(translate(vals.lang, 'status.failed'));
-      setErrors({ code: err.code, message: err.message, details: err.details });
+      setErrors({ code: err.code, message: err.message, details: err.details, fields: err.fields });
     } finally {
       busyRef.current = false;
       setBusy(false);

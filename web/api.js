@@ -16,6 +16,7 @@ async function request(path, { signal, ...options } = {}) {
     if (!res.ok) {
       const err = new Error(data.error || 'Something went wrong. Please try again.');
       err.details = data.details;
+      err.fields = data.fields;
       err.code = data.code;
       throw err;
     }

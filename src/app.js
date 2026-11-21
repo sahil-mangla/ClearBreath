@@ -12,6 +12,7 @@ import { buildPlan, estimateExposure, fallbackBriefing, topActions, PM25_GUIDELI
 import { applyTexts, builtinTexts, collectTexts, publicText } from './hi.js';
 import { createLlm } from './llm.js';
 import { translateTexts } from './translate.js';
+import { fieldsOf } from './validate.js';
 import { createRateLimiter } from './ratelimit.js';
 import { validateAskInput, validatePlanInput } from './validate.js';
 
@@ -162,7 +163,7 @@ export function createApp({
 
   async function handlePlan(req, res) {
     const parsed = validatePlanInput(await readJson(req, res));
-    if (!parsed.ok) throw new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: parsed.errors });
+    if (!parsed.ok) throw new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: parsed.errors, fields: fieldsOf(parsed.errors) });
     const profile = parsed.value;
     const city = CITIES[profile.city];
     const cityName = profile.lang === 'hi' ? city.nameHi : city.name; // the name as written in the reply language
@@ -240,7 +241,7 @@ export function createApp({
 
   async function handleAsk(req, res) {
     const parsed = validateAskInput(await readJson(req, res));
-    if (!parsed.ok) throw new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: parsed.errors });
+    if (!parsed.ok) throw new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: parsed.errors, fields: fieldsOf(parsed.errors) });
     if (!llm.enabled) throw new HttpError(503, 'The AI assistant is not configured on this server. The personalised plan above still works.', { code: 'ask_off' });
 
     const { city: cityKey, question, lang } = parsed.value;

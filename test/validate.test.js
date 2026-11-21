@@ -65,3 +65,10 @@ test('validateAskInput requires a real question and a supported city', () => {
   assert.equal(validateAskInput({ city: 'nowhere', question: 'hello there' }).ok, false);
   assert.equal(validateAskInput({ city: 'delhi', question: 'hello', lang: 'fr' }).ok, false);
 });
+
+test('fieldsOf maps validation messages to form field ids, longest label first', async () => {
+  const { fieldsOf, validatePlanInput } = await import('../src/validate.js');
+  const bad = validatePlanInput({ city: 'delhi', adults: 99, commuteKm: 500, commute: 'jetpack', manualPm25: 5000 });
+  assert.deepEqual(fieldsOf(bad.errors).sort(), ['adults', 'commute', 'commuteKm', 'manualPm25']);
+  assert.deepEqual(fieldsOf(['Please choose a supported city.']), []);
+});

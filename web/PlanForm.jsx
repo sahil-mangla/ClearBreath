@@ -27,12 +27,12 @@ function Num({ id, label, value, onChange, min, max, invalid = false, describedB
   );
 }
 
-function Pick({ id, label, value, onChange, options, prefix }) {
+function Pick({ id, label, value, onChange, options, prefix, invalid = false }) {
   const t = useT();
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <select id={id} name={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select id={id} name={id} value={value} aria-invalid={invalid || undefined} aria-describedby={invalid ? 'form-errors' : undefined} onChange={(e) => onChange(e.target.value)}>
         {options.map((v) => (
           <option key={v} value={v}>
             {t(`${prefix}.${v}`)}
@@ -61,7 +61,7 @@ export default function PlanForm({ values, set, onSubmit, busy, errors, cityName
   useEffect(() => {
     if (errors) errorRef.current?.focus();
   }, [errors]);
-  const manualInvalid = Boolean(errors?.details?.some((d) => /PM2\.5/.test(d)));
+  const bad = (id) => Boolean(errors?.fields?.includes(id));
   const toggleCondition = (id, on) =>
     set({ conditions: on ? [...values.conditions, id] : values.conditions.filter((c) => c !== id) });
 
@@ -78,9 +78,9 @@ export default function PlanForm({ values, set, onSubmit, busy, errors, cityName
           <fieldset>
             <legend>{t('who.legend')}</legend>
             <div className="row row--three">
-              <Num id="adults" label={t('adults')} value={values.adults} onChange={(v) => set({ adults: v })} min={1} max={10} />
-              <Num id="children" label={t('children')} value={values.children} onChange={(v) => set({ children: v })} min={0} max={10} />
-              <Num id="seniors" label={t('seniors')} value={values.seniors} onChange={(v) => set({ seniors: v })} min={0} max={10} />
+              <Num id="adults" label={t('adults')} value={values.adults} onChange={(v) => set({ adults: v })} min={1} max={10} invalid={bad('adults')} describedBy="form-errors" />
+              <Num id="children" label={t('children')} value={values.children} onChange={(v) => set({ children: v })} min={0} max={10} invalid={bad('children')} describedBy="form-errors" />
+              <Num id="seniors" label={t('seniors')} value={values.seniors} onChange={(v) => set({ seniors: v })} min={0} max={10} invalid={bad('seniors')} describedBy="form-errors" />
             </div>
           </fieldset>
 
@@ -98,8 +98,8 @@ export default function PlanForm({ values, set, onSubmit, busy, errors, cityName
           <fieldset>
             <legend>{t('commute.legend')}</legend>
             <div className="row">
-              <Pick id="commute" label={t('commute.mode')} value={values.commute} onChange={(v) => set({ commute: v })} options={COMMUTES} prefix="commute" />
-              <Num id="commuteKm" label={t('commute.km')} value={values.commuteKm} onChange={(v) => set({ commuteKm: v })} min={0} max={100} />
+              <Pick id="commute" label={t('commute.mode')} value={values.commute} onChange={(v) => set({ commute: v })} options={COMMUTES} prefix="commute" invalid={bad('commute')} />
+              <Num id="commuteKm" label={t('commute.km')} value={values.commuteKm} onChange={(v) => set({ commuteKm: v })} min={0} max={100} invalid={bad('commuteKm')} describedBy="form-errors" />
             </div>
           </fieldset>
         </div>
@@ -108,8 +108,8 @@ export default function PlanForm({ values, set, onSubmit, busy, errors, cityName
           <fieldset>
             <legend>{t('home.legend')}</legend>
             <div className="row">
-              <Pick id="cooking" label={t('cooking.label')} value={values.cooking} onChange={(v) => set({ cooking: v })} options={COOKING} prefix="cooking" />
-              <Pick id="heating" label={t('heating.label')} value={values.heating} onChange={(v) => set({ heating: v })} options={HEATING} prefix="heating" />
+              <Pick id="cooking" label={t('cooking.label')} value={values.cooking} onChange={(v) => set({ cooking: v })} options={COOKING} prefix="cooking" invalid={bad('cooking')} />
+              <Pick id="heating" label={t('heating.label')} value={values.heating} onChange={(v) => set({ heating: v })} options={HEATING} prefix="heating" invalid={bad('heating')} />
             </div>
             <div className="checks">
               <Check name="hasPurifier" checked={values.hasPurifier} onChange={(on) => set({ hasPurifier: on })}>
@@ -141,7 +141,7 @@ export default function PlanForm({ values, set, onSubmit, busy, errors, cityName
 
           <details>
             <summary>{t('manual.summary')}</summary>
-            <Num id="manualPm25" label={t('manual.label')} value={values.manualPm25} onChange={(v) => set({ manualPm25: v })} min={0} max={1000} invalid={manualInvalid} describedBy="form-errors" />
+            <Num id="manualPm25" label={t('manual.label')} value={values.manualPm25} onChange={(v) => set({ manualPm25: v })} min={0} max={1000} invalid={bad('manualPm25')} describedBy="form-errors" />
           </details>
         </div>
       </div>
