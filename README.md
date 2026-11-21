@@ -19,7 +19,7 @@ A GenAI-powered assistant that helps Indian families, especially in Delhi-NCR an
 ```bash
 export GEMINI_API_KEY=your-key      # optional: without it the built-in rules engine writes the briefing
 npm start                           # http://127.0.0.1:3000
-npm test                            # 116 tests, no network needed
+npm test                            # 123 tests, no network needed
 npm run test:browser                # real-Chrome smoke test (canvases, CSP, Hindi, print, low-power); skips if no Chrome
 npm run build                       # only after editing web/ (rebuilds public/app.js)
 ```
@@ -83,15 +83,16 @@ Gemini is an optional enhancement; the app gives a complete, repeatable answer w
 
 **Efficiency.** No dependencies, and static files are pre-gzipped at start-up. Air data is cached per city for 10 minutes, with in-flight de-duplication, so many users in one city cost one upstream call. Outbound calls have timeouts. Gemini calls use a small token budget with thinking disabled for the 2.5 models. If Gemini fails, the app still returns a complete plan.
 
-**Testing.** 116 tests with `node --test`, covering CPCB breakpoints, validation and injection strings, the rules engine per scenario, the exposure model, cache/dedupe/timeouts, the Gemini client (key placement, id filtering, clamping, failure logging) and the front-end helpers, the English/Hindi string tables (identical keys and placeholders), and the determinism guards (number grounding, translation validation), the built-in Hindi catalogue and full HTTP integration (headers, traversal, fonts, `/api/air`, 400/405/413/415/429/502/503, fallback vs Gemini paths, Hindi fallback). `npm run test:browser` drives real headless Chrome over the DevTools protocol with a mocked air reading: it checks that the canvases mount and move, that no CSP violation fires, the severe-air strip, themed dropdowns, the Hindi toggle, the print layout, low-power and reduced-motion modes, and phone-width overflow.
+**Testing.** 123 tests with `node --test`, covering CPCB breakpoints, validation and injection strings, the rules engine per scenario, the exposure model, cache/dedupe/timeouts, the Gemini client (key placement, id filtering, clamping, failure logging) and the front-end helpers, the English/Hindi string tables (identical keys and placeholders), and the determinism guards (number grounding, translation validation), the built-in Hindi catalogue and full HTTP integration (headers, traversal, fonts, `/api/air`, 400/405/413/415/429/502/503, fallback vs Gemini paths, Hindi fallback). `npm run test:browser` drives real headless Chrome over the DevTools protocol with a mocked air reading: it checks that the canvases mount and move, that no CSP violation fires, the severe-air strip, themed dropdowns, the Hindi toggle, the print layout, low-power and reduced-motion modes, and phone-width overflow.
 
 **Accessibility.** Skip link, landmarks, a labelled form with fieldset/legend, and help text linked by `aria-describedby`. A polite status line announces progress, focus moves to the results heading after a plan is built (not when only the language changes) and to the error summary after a failed submit, the skyline and smoke both obey the Pause button, and critical alerts use `role="alert"`. AQI is conveyed by number and word as well as colour, and alerts carry text prefixes. Colours are AA-contrast in light and dark mode, focus is visible, touch targets are at least 44 px, `prefers-reduced-motion` is respected (the haze is drawn still and text appears at rest), looping haze motion can be paused (WCAG 2.2.2), the animated headline is exposed to screen readers as plain text, the layout is responsive, the document and Hindi text carry the right `lang` (server-supplied English inside Hindi mode is marked `lang="en"`), the dropdowns are themed with a native fallback, the print view is a light high-contrast plan, and the whole flow works by keyboard.
 
 ## Honest limitations
 
 - The rate limiter and all caches are per process and in memory. The Gemini ceiling (`GEMINI_MAX_CALLS_PER_MIN`) limits the call rate, not money; also set a quota at the Google project level.
-- No stale-while-error fallback for the air feed, and the JS bundle has no content hash or ETag yet; both are listed as follow-ups from the efficiency review.
-- Form validation messages from the server are not tied to individual fields (only the manual PM2.5 field is marked invalid); they are summarised in a focused error block.
+- Air data falls back to the last good reading (labelled as stale, up to 1 hour) when Open-Meteo fails, and static files are served with ETag/304; the JS bundle has no content hash in its filename.
+- Server validation errors name the offending fields (`aria-invalid` plus a focused summary), but there is no inline message per field.
+- The forecast is current conditions only: no multi-day outlook or GRAP-stage alerts, and no tracking of a household's progress over time.
 
 - Air data is a **model estimate** (CAMS via Open-Meteo), not CPCB station readings, and the CPCB bands are applied to current rather than 24-hour averages. The UI says so.
 - Impact figures (mask efficiency, purifier reduction, CO2 per km) are **typical-value approximations** and are labelled as such. The exposure model is deliberately simple, and its assumptions are shown in the UI.
