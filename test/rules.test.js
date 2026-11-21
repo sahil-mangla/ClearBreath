@@ -171,3 +171,13 @@ test('an auto-rickshaw is not modelled as a closed cabin, a car is', () => {
   const p = plan({ commute: 'auto_cab' });
   assert.match(p.routine.find((a) => a.id === 'r-commute').title, /auto-rickshaw/);
 });
+
+test('health conditions get their own conservative, doctor-first advice on polluted days only', () => {
+  const sick = plan({ conditions: ['pregnancy', 'asthma'] });
+  const a = sick.routine.find((x) => x.id === 'r-conditions');
+  assert.ok(a, 'present on a Very Poor day');
+  assert.match(a.detail, /Asthma:.*Pregnancy:/s, 'fixed order whatever the input order');
+  assert.match(a.detail, /doctor/);
+  assert.equal(plan({ conditions: [] }).routine.some((x) => x.id === 'r-conditions'), false);
+  assert.equal(plan({ conditions: ['asthma'] }, { pm25: 20 }).routine.some((x) => x.id === 'r-conditions'), false, 'not on a clean day');
+});

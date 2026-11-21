@@ -32,6 +32,14 @@ export const PM25_GUIDELINES = { whoPm25_24h: WHO_PM25_24H, indiaPm25_24h: INDIA
 // modelled as open to avoid promising a benefit that auto riders do not get.
 const CLOSED_CABIN = new Set(['car']);
 
+/** Per-condition guidance, kept conservative: it supports a doctor's plan and never replaces one. */
+export const CONDITION_ADVICE = Object.freeze({
+  asthma: 'Asthma: keep your reliever inhaler on you and follow your doctor\'s asthma action plan. Do not skip your regular medicines on smoggy days.',
+  heart: 'Heart condition: avoid exertion outdoors, take it easy on stairs and walks, and treat chest discomfort or unusual breathlessness as a reason to call your doctor.',
+  pregnancy: 'Pregnancy: keep outdoor time short, wear a well-fitted N95 when you must go out, and ask your doctor or midwife about smog days.',
+});
+const CONDITION_ORDER = Object.keys(CONDITION_ADVICE);
+
 const isVulnerable = (p) => p.children > 0 || p.seniors > 0 || p.conditions.length > 0;
 /** The same rule that decides whether the plan recommends a mask, so the exposure model cannot disagree with it. */
 const needsMask = (L, p) => L >= 3 || (L >= 2 && isVulnerable(p));
@@ -152,6 +160,19 @@ export function buildPlan({ levelIndex: L, pm25, profile: p, cityKey, window: w,
           : 'Choose an N95/FFP2 (without an exhalation-valve gap) and check the seal. Cloth and surgical masks filter far less. Kids need a small-size mask that fits.',
         'Certified N95s capture at least 95% of fine particles in lab tests; with real-world fit expect roughly 80-90%.',
         { hasN95: p.hasN95 },
+      ),
+    );
+  }
+
+  const conditions = CONDITION_ORDER.filter((c) => p.conditions.includes(c));
+  if (polluted && conditions.length) {
+    routine.push(
+      act(
+        'r-conditions', 1,
+        'Extra care for your health conditions',
+        `${conditions.map((c) => CONDITION_ADVICE[c]).join(' ')} Follow your own doctor\'s advice first.`,
+        'Fine-particle spikes are a known trigger for asthma and heart symptoms, so planning ahead lowers the chance of an emergency.',
+        { conditions },
       ),
     );
   }
