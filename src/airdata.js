@@ -41,9 +41,19 @@ export function bestWindow(hourly, nowTime) {
 
 /**
  * Air-quality client with per-city caching, in-flight de-duplication and a hard timeout.
+ * When the upstream is down it serves the last good reading (up to `staleMs` old, labelled as such) and
+ * remembers the failure for `failMs`, so an outage costs one slow request instead of one per visitor.
  */
-export function createAirClient({ fetchImpl = fetch, ttlMs = 10 * 60_000, timeoutMs = 6000, now = Date.now } = {}) {
+export function createAirClient({
+  fetchImpl = fetch,
+  ttlMs = 10 * 60_000,
+  staleMs = 60 * 60_000,
+  failMs = 30_000,
+  timeoutMs = 6000,
+  now = Date.now,
+} = {}) {
   const cache = new Map(); // cityKey -> {at, data}
+  const failures = new Map(); // cityKey -> {at, error}
   const inflight = new Map(); // cityKey -> Promise
 
   async function load(cityKey) {
@@ -74,11 +84,26 @@ export function createAirClient({ fetchImpl = fetch, ttlMs = 10 * 60_000, timeou
     async get(cityKey) {
       const hit = cache.get(cityKey);
       if (hit && now() - hit.at < ttlMs) return hit.data;
+      const stale = () =>
+        hit && now() - hit.at < staleMs ? { ...hit.data, source: `${SOURCE}, last reading (live feed unavailable)` } : null;
+      const failed = failures.get(cityKey);
+      if (failed && now() - failed.at < failMs) {
+        const fallback = stale();
+        if (fallback) return fallback;
+        throw failed.error;
+      }
       if (inflight.has(cityKey)) return inflight.get(cityKey);
       const p = load(cityKey)
         .then((data) => {
           cache.set(cityKey, { at: now(), data });
+          failures.delete(cityKey);
           return data;
+        })
+        .catch((error) => {
+          failures.set(cityKey, { at: now(), error });
+          const fallback = stale();
+          if (fallback) return fallback;
+          throw error;
         })
         .finally(() => inflight.delete(cityKey));
       inflight.set(cityKey, p);

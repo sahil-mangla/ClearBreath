@@ -77,3 +77,30 @@ test('client rejects on upstream errors and on missing PM2.5', async () => {
     createAirClient({ fetchImpl: async () => upstream({ current: { time: 't', pm2_5: null } }) }).get('delhi'),
   );
 });
+
+test('when the upstream fails it serves the last good reading, labelled stale, for up to an hour', async () => {
+  let t = 0;
+  let down = false;
+  let calls = 0;
+  const client = createAirClient({ fetchImpl: async () => (calls++, down ? { ok: false, status: 503 } : upstream()), ttlMs: 1000, now: () => t });
+  const fresh = await client.get('delhi');
+  down = true;
+  t = 2000;
+  const stale = await client.get('delhi');
+  assert.equal(stale.pm25, fresh.pm25);
+  assert.match(stale.source, /last reading/);
+  t = 2000 + 60 * 60_000;
+  await assert.rejects(client.get('delhi'), 'too old to serve');
+});
+
+test('an outage is remembered for 30 s so visitors do not each wait for the timeout', async () => {
+  let t = 0;
+  let calls = 0;
+  const client = createAirClient({ fetchImpl: async () => (calls++, { ok: false, status: 500 }), now: () => t });
+  await assert.rejects(client.get('delhi'));
+  await assert.rejects(client.get('delhi'));
+  assert.equal(calls, 1, 'second request skipped the upstream');
+  t = 31_000;
+  await assert.rejects(client.get('delhi'));
+  assert.equal(calls, 2, 'retried after the failure window');
+});
