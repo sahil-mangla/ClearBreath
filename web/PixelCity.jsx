@@ -73,6 +73,7 @@ export default function PixelCity({ city, density, still = false }) {
     let sky = null;
     let tick = 0;
     let timer = 0;
+    let onScreen = true;
 
     const render = () => {
       if (!sky) return;
@@ -109,10 +110,12 @@ export default function PixelCity({ city, density, still = false }) {
 
     const ro = new ResizeObserver(build);
     ro.observe(canvas);
+    const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
+    io?.observe(canvas);
     build();
     if (!reduced && !still) {
       timer = window.setInterval(() => {
-        if (document.hidden) return;
+        if (document.hidden || !onScreen) return;
         tick += 1;
         render();
       }, TICK_MS);
@@ -123,6 +126,7 @@ export default function PixelCity({ city, density, still = false }) {
     };
     return () => {
       ro.disconnect();
+      io?.disconnect();
       window.clearInterval(timer);
     };
   }, [reduced, still]);

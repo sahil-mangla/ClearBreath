@@ -97,6 +97,7 @@ export default function Smoke({ density, paused, variant = 'page', boost = 0, cl
     let lastDraw = 0;
     let t = 0;
     let pointer = null;
+    let onScreen = true; // band canvases below the fold stop animating until scrolled into view
 
     const draw = () => {
       const d = clamp(s.current + s.boost, 0, 1);
@@ -141,6 +142,7 @@ export default function Smoke({ density, paused, variant = 'page', boost = 0, cl
 
     const frame = (now) => {
       raf = 0;
+      if (!onScreen) return;
       if (now - lastDraw < frameMs && s.motion) {
         raf = requestAnimationFrame(frame);
         return;
@@ -159,7 +161,7 @@ export default function Smoke({ density, paused, variant = 'page', boost = 0, cl
     };
 
     const kick = () => {
-      if (raf || document.hidden) return;
+      if (raf || document.hidden || !onScreen) return;
       last = performance.now();
       raf = requestAnimationFrame(frame);
     };
@@ -198,8 +200,21 @@ export default function Smoke({ density, paused, variant = 'page', boost = 0, cl
       document.addEventListener('pointerleave', onLeave);
     }
     document.addEventListener('visibilitychange', onVisibility);
+    const io =
+      page || typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(([entry]) => {
+            onScreen = entry.isIntersecting;
+            if (onScreen) kick();
+            else {
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          });
+    io?.observe(canvas);
     return () => {
       cancelAnimationFrame(raf);
+      io?.disconnect();
       ro?.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
