@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.claude/
+.hallmark/
+.impeccable/hook.cache.json
+.DS_Store

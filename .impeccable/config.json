@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "public/styles.css"
+        ],
+        "createdAt": "2026-11-21T08:19:50.266Z",
+        "reason": "Chevron and checkmark glyphs drawn from a 2px right+bottom border on a 5-7px box, not card accent borders"
+      }
+    ]
+  }
+}

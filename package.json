@@ -1,0 +1,23 @@
+{
+  "name": "clearbreath",
+  "version": "1.0.0",
+  "description": "GenAI assistant that helps Indian families navigate winter smog with low-emission routines, indoor air hacks and sustainable alternatives.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/*.test.js\"",
+    "build": "node scripts/build.mjs",
+    "test:browser": "node scripts/browser-smoke.mjs"
+  },
+  "devDependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.3.0",
+    "@fontsource/gloock": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
