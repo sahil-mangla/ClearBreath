@@ -122,7 +122,12 @@ export function createApp({
 } = {}) {
   const statics = loadStatic(publicDir);
   const air = createAirClient({ fetchImpl });
-  const llm = createLlm({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL || undefined, fetchImpl });
+  const llm = createLlm({
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL || undefined,
+    maxCallsPerMin: Number(env.GEMINI_MAX_CALLS_PER_MIN) || undefined,
+    fetchImpl,
+  });
   const limiter = createRateLimiter({ limit: Number(env.RATE_LIMIT_PER_MIN) || 20, windowMs: 60_000 });
   const trustProxy = env.TRUST_PROXY === '1';
 

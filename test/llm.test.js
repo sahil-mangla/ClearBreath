@@ -118,7 +118,7 @@ test('cached results expire after ten minutes, not before', async () => {
 
 test('the cache is bounded: the oldest entry is evicted after 300 distinct requests', async () => {
   const r = replies(geminiReply({ answer: 'ok' }));
-  const llm = createLlm({ apiKey: 'k', fetchImpl: r.fetchImpl });
+  const llm = createLlm({ apiKey: 'k', maxCallsPerMin: 100_000, fetchImpl: r.fetchImpl });
   for (let i = 0; i < 301; i += 1) await llm.answer({ facts: {}, untrusted: { question: `q${i}` } });
   assert.equal(r.calls.length, 301);
   await llm.answer({ facts: {}, untrusted: { question: 'q300' } });
@@ -129,7 +129,7 @@ test('the cache is bounded: the oldest entry is evicted after 300 distinct reque
 
 test('a flood of questions cannot push cached translations out (separate caches)', async () => {
   const r = replies({ ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ translations: ['नमस्ते 5'] }) }] } }] }) });
-  const llm = createLlm({ apiKey: 'k', fetchImpl: r.fetchImpl });
+  const llm = createLlm({ apiKey: 'k', maxCallsPerMin: 100_000, fetchImpl: r.fetchImpl });
   await llm.translate(['Hello 5']);
   const base = r.calls.length;
   for (let i = 0; i < 305; i += 1) await llm.answer({ facts: {}, untrusted: { question: `q${i}` } });
@@ -152,4 +152,22 @@ test('the same question twice costs one call (answers are cached)', async () => 
   await llm.answer({ facts: {}, untrusted: { question: 'Can I jog?' } });
   await llm.answer({ facts: {}, untrusted: { question: 'Can I jog?' } });
   assert.equal(r.calls.length, 1);
+});
+
+test('a per-minute call budget caps Gemini use, then recovers; the caller just gets null', async () => {
+  let t = 0;
+  const r = replies(geminiReply({ answer: 'ok' }));
+  const llm = createLlm({ apiKey: 'k', maxCallsPerMin: 3, now: () => t, fetchImpl: r.fetchImpl });
+  for (let i = 0; i < 3; i += 1) assert.equal(await llm.answer({ facts: {}, untrusted: { question: `q${i}` } }), 'ok');
+  assert.equal(await quiet(() => llm.answer({ facts: {}, untrusted: { question: 'q3' } })), null);
+  assert.equal(r.calls.length, 3, 'no fourth call was made');
+  t = 60_000;
+  assert.equal(await llm.answer({ facts: {}, untrusted: { question: 'q4' } }), 'ok');
+});
+
+test('a retry also spends budget', async () => {
+  const r = replies(status(503), geminiReply({ answer: 'ok' }));
+  const llm = createLlm({ apiKey: 'k', maxCallsPerMin: 1, retryDelayMs: 0, fetchImpl: r.fetchImpl });
+  assert.equal(await quiet(() => llm.answer({ facts: {}, untrusted: {} })), null);
+  assert.equal(r.calls.length, 1, 'the retry was refused');
 });

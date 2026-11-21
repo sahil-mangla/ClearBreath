@@ -32,6 +32,7 @@ Put these in a `.env` file (copy `.env.example`; it is git-ignored and loaded au
 |---|---|---|
 | `GEMINI_API_KEY` | none | Enables the Gemini briefing, Hindi translation and Q&A |
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Gemini model name |
+| `GEMINI_MAX_CALLS_PER_MIN` | `120` | Global ceiling on Gemini calls per minute (retries count); beyond it the rules engine and built-in Hindi answer |
 | `PORT` / `HOST` | `3000` / `127.0.0.1` | Listen address |
 | `RATE_LIMIT_PER_MIN` | `20` | Per-IP API requests per minute |
 | `TRUST_PROXY` | unset | Set to `1` behind a reverse proxy to use `X-Forwarded-For` |
@@ -88,7 +89,7 @@ Gemini is an optional enhancement; the app gives a complete, repeatable answer w
 
 ## Honest limitations
 
-- The rate limiter and all caches are per process and in memory. There is no overall Gemini spending cap; put one at the Google project level.
+- The rate limiter and all caches are per process and in memory. The Gemini ceiling (`GEMINI_MAX_CALLS_PER_MIN`) limits the call rate, not money; also set a quota at the Google project level.
 - No stale-while-error fallback for the air feed, and the JS bundle has no content hash or ETag yet; both are listed as follow-ups from the efficiency review.
 - Form validation messages from the server are not tied to individual fields (only the manual PM2.5 field is marked invalid); they are summarised in a focused error block.
 

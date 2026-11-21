@@ -64,9 +64,24 @@ export function createLlm({
   fetchImpl = fetch,
   timeoutMs = 9_000,
   retryDelayMs = 400,
+  maxCallsPerMin = 120,
   now = Date.now,
 } = {}) {
   const enabled = Boolean(apiKey) && MODEL_RE.test(model);
+
+  // A global ceiling on Gemini calls (retries count), so many visitors cannot run up an unbounded bill.
+  // Past the ceiling every method returns null and the rules engine and built-in Hindi answer instead.
+  let budgetWindowStart = now();
+  let budgetUsed = 0;
+  const takeBudget = () => {
+    if (now() - budgetWindowStart >= 60_000) {
+      budgetWindowStart = now();
+      budgetUsed = 0;
+    }
+    if (budgetUsed >= maxCallsPerMin) return false;
+    budgetUsed += 1;
+    return true;
+  };
   // sha256(request) -> {at, value}; only successful, validated outputs. Separate caches so a flood of unique
   // questions cannot push the shared plan translations out.
   const makeCache = () => {
@@ -119,8 +134,12 @@ export function createLlm({
             generationConfig,
           }),
         });
+      if (!takeBudget()) {
+        console.error('[llm] call skipped: per-minute budget used');
+        return null;
+      }
       let res = await call();
-      if (RETRY_STATUS.has(res.status)) {
+      if (RETRY_STATUS.has(res.status) && takeBudget()) {
         await new Promise((r) => setTimeout(r, retryDelayMs));
         res = await call();
       }
