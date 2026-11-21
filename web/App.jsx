@@ -175,7 +175,7 @@ export default function App() {
 
         <header className="bar">
           {lowPower ? null : <Smoke variant="band" className="bar__smoke" density={density} boost={0.2} paused={paused} />}
-          <p className="bar__brand">ClearBreath</p>
+          <p className="bar__brand" lang="en">ClearBreath</p>
           <div className="bar__tools">
             <div className="langs" role="group" aria-label={t('lang.label')}>
               <button type="button" className="btn btn--quiet" lang="en" aria-pressed={lang === 'en'} onClick={() => changeLang('en')}>

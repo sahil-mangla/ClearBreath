@@ -1,10 +1,11 @@
 import { isCity } from './cities.js';
+import { LANGS } from './constants.js';
 
 export const COMMUTES = ['car', 'auto_cab', 'two_wheeler', 'bus_metro', 'walk_cycle', 'wfh'];
 export const COOKING = ['lpg', 'png', 'induction', 'biomass'];
 export const HEATING = ['none', 'electric', 'wood_coal'];
 export const CONDITIONS = ['asthma', 'heart', 'pregnancy'];
-export const LANGS = ['en', 'hi'];
+export { LANGS };
 
 /** Strip control characters, collapse whitespace, cap length. Returns '' for non-strings. */
 export function cleanText(value, max) {

@@ -1,3 +1,4 @@
+import { LANGS as SERVER_LANGS } from '../src/constants.js';
 // Interface strings in English and Hindi. Pure data plus a tiny formatter, so it is unit-tested.
 // Server-written plan text (action titles and details) stays English; the UI says so in Hindi mode.
 
@@ -318,7 +319,7 @@ const hi = {
 };
 
 export const STRINGS = Object.freeze({ en, hi });
-export const LANGS = Object.freeze(['en', 'hi']);
+export const LANGS = Object.freeze([...SERVER_LANGS]);
 
 const ERR_ALIASES = { bad_type: 'bad_request', bad_json: 'bad_request', body_read: 'bad_request', bad_method: 'bad_request', not_found: 'bad_request' };
 

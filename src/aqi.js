@@ -53,14 +53,19 @@ function subIndex(conc, bands) {
   return 500;
 }
 
+/** The CPCB bands on the 0-500 scale, in LEVELS order. The one definition the server and the page both use. */
+export const BANDS = Object.freeze(
+  LEVELS.map((name, i) => {
+    const to = [50, 100, 200, 300, 400, 500][i];
+    return Object.freeze({ name, from: i === 0 ? 0 : [50, 100, 200, 300, 400][i - 1] + 1, to });
+  }),
+);
+export const SCALE_MAX = 500;
+
 /** Map an AQI value (0-500) to a LEVELS index. */
 export function levelIndexFor(value) {
-  if (value <= 50) return 0;
-  if (value <= 100) return 1;
-  if (value <= 200) return 2;
-  if (value <= 300) return 3;
-  if (value <= 400) return 4;
-  return 5;
+  const i = BANDS.findIndex((b) => value <= b.to);
+  return i === -1 ? BANDS.length - 1 : i;
 }
 
 /**
