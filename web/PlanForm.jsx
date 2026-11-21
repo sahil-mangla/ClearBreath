@@ -8,6 +8,7 @@ const HEATING = ['none', 'electric', 'wood_coal'];
 const CONDITIONS = ['asthma', 'heart', 'pregnancy'];
 
 function Num({ id, label, value, onChange, min, max, invalid = false, describedBy }) {
+  const t = useT();
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -23,6 +24,7 @@ function Num({ id, label, value, onChange, min, max, invalid = false, describedB
         aria-describedby={invalid ? describedBy : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
+      {invalid ? <p className="field__error">{t('field.check')}</p> : null}
     </div>
   );
 }
@@ -39,6 +41,7 @@ function Pick({ id, label, value, onChange, options, prefix, invalid = false }) 
           </option>
         ))}
       </select>
+      {invalid ? <p className="field__error">{t('field.check')}</p> : null}
     </div>
   );
 }

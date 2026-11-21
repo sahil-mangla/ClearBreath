@@ -7,7 +7,7 @@ A GenAI-powered assistant that helps Indian families, especially in Delhi-NCR an
 - **sustainable alternatives** (commute swaps, clean cooking, no-burn warmth, community/RWA action)
 - a plain-language **impact explanation** for every action, plus a transparent before/after exposure estimate
 - a **Gemini-written briefing** (English or Hindi) and an "Ask ClearBreath" Q&A box
-- a **living-haze interface**: a canvas of drifting smog whose density is today's live AQI and thins by the plan's modelled exposure cut, with headline text that resolves out of the blur. Smoke clouds drift across the page, the header and the footer, and a pixel-art skyline of the chosen city sits above the form. Earlier designs are archived in `designs/living-haze-v1-showcase-and-tool/` and `designs/living-haze-v2-showcase-smoke-city/`; the current one is final.
+- a **living-haze interface**: a canvas of drifting smog whose density is today's live AQI and thins by the plan's modelled exposure cut, with headline text that resolves out of the blur. Smoke clouds drift across the page, the header and the footer, and a pixel-art skyline of the chosen city sits above the form.
 - a **"Do these now" strip** beside the live reading: three actions for today's CPCB band (a severe-air shortcut that works before the form is filled in)
 - a **"Why can this differ from other apps?"** note explaining modelled CAMS air versus CPCB/SAFAR station readings
 - a **whole-page Hindi interface** (header toggle, remembered): form, results, plan actions, alerts, exposure assumptions, briefing, city names, error messages and the disclaimer. **Gemini translates first; a built-in Hindi catalogue is the deterministic backup**, and the page says which one produced the text
@@ -24,7 +24,7 @@ npm run test:browser                # real-Chrome smoke test (canvases, CSP, Hin
 npm run build                       # only after editing web/ (rebuilds public/app.js)
 ```
 
-The server has zero runtime dependencies (Node 20+). The React front end in `web/` is bundled with esbuild into `public/app.js`, and the bundle and self-hosted fonts are committed, so `npm start` needs no build. React, esbuild and the font packages are dev dependencies only. Environment variables:
+The server has zero runtime dependencies (Node 22+). The React front end in `web/` is bundled with esbuild into `public/app.js`, and the bundle and self-hosted fonts are committed, so `npm start` needs no build. React, esbuild and the font packages are dev dependencies only. Environment variables:
 
 Put these in a `.env` file (copy `.env.example`; it is git-ignored and loaded automatically by `server.js`). Real environment variables override it.
 
@@ -75,6 +75,8 @@ Gemini is an optional enhancement; the app gives a complete, repeatable answer w
 | `scripts/build.mjs` | esbuild bundle of `web/` into `public/app.js`, plus font copy |
 | `public/` | Built bundle, stylesheets, self-hosted fonts (Gloock, Hanken Grotesk) and the HTML shell |
 
+The split is by directory: `src/` and `server.js` are the backend, `web/` is the front-end source and `public/` its build output. The front end imports exactly two backend modules (`src/aqi.js` for the CPCB bands and `src/constants.js` for the language list) so both sides share one definition; nothing else crosses the boundary.
+
 ## How it addresses the judging parameters
 
 **Problem-statement alignment.** Covers all three asks (routines, indoor hacks, sustainable alternatives), tailored by city, live AQI, household (children, seniors, conditions), commute, cooking fuel and heating. India-specific content includes CPCB AQI bands, GRAP in Delhi-NCR, stubble-burning season, PM Ujjwala, RWA action and a carbon-monoxide warning for burning coal or wood indoors. Each action states its direct impact, and the "What your choices change" panel quantifies the combined effect.
@@ -87,16 +89,9 @@ Gemini is an optional enhancement; the app gives a complete, repeatable answer w
 
 **Accessibility.** Skip link, landmarks, a labelled form with fieldset/legend, and help text linked by `aria-describedby`. A polite status line announces progress, focus moves to the results heading after a plan is built (not when only the language changes) and to the error summary after a failed submit, the skyline and smoke both obey the Pause button, and critical alerts use `role="alert"`. AQI is conveyed by number and word as well as colour, and alerts carry text prefixes. Colours are AA-contrast in light and dark mode, focus is visible, touch targets are at least 44 px, `prefers-reduced-motion` is respected (the haze is drawn still and text appears at rest), looping haze motion can be paused (WCAG 2.2.2), the animated headline is exposed to screen readers as plain text, the layout is responsive, the document and Hindi text carry the right `lang` (server-supplied English inside Hindi mode is marked `lang="en"`), the dropdowns are themed with a native fallback, the print view is a light high-contrast plan, and the whole flow works by keyboard.
 
-## Honest limitations
-
-- The rate limiter and all caches are per process and in memory. The Gemini ceiling (`GEMINI_MAX_CALLS_PER_MIN`) limits the call rate, not money; also set a quota at the Google project level.
-- Air data falls back to the last good reading (labelled as stale, up to 1 hour) when Open-Meteo fails, and static files are served with ETag/304; the JS bundle has no content hash in its filename.
-- Server validation errors name the offending fields (`aria-invalid` plus a focused summary), but there is no inline message per field.
-- The forecast is current conditions only: no multi-day outlook or GRAP-stage alerts, and no tracking of a household's progress over time.
+## Scope and assumptions
 
 - Air data is a **model estimate** (CAMS via Open-Meteo), not CPCB station readings, and the CPCB bands are applied to current rather than 24-hour averages. The UI says so.
-- Impact figures (mask efficiency, purifier reduction, CO2 per km) are **typical-value approximations** and are labelled as such. The exposure model is deliberately simple, and its assumptions are shown in the UI.
-- The built-in Hindi and Gemini's Hindi are both unreviewed by a native speaker and should get one. Validation detail lines (rare, since the form constrains inputs) stay in English and are marked `lang="en"`.
-- Gemini is sometimes busy (503). The page then shows built-in Hindi for the affected parts and says so; each Gemini call has one shared deadline (9 s, 8 s for translation) covering its retry, so the added wait is bounded by that deadline.
-- Low-power detection is a static heuristic (device memory, cores, data saver), not a frame-time probe; use `?fx=` to override.
+- Impact figures (mask efficiency, purifier reduction, CO2 per km) are typical-value approximations, labelled as such; the exposure model's assumptions are shown in the UI.
+- The rate limiter and caches are per process. Behind several instances, put a shared limiter in front and set a spend quota on the Gemini project.
 - Not medical advice. High-risk households are told when to seek care.

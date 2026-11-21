@@ -6,3 +6,7 @@ node_modules/
 .hallmark/
 .impeccable/hook.cache.json
 .DS_Store
+.impeccable/
+.vscode/
+DESIGN.md
+PRODUCT.md
