@@ -78,6 +78,21 @@ test('static assets are served and gzip is used when accepted', async () => {
   }
 });
 
+test('scripts and styles carry an ETag: a matching If-None-Match gets a body-less 304', async () => {
+  for (const [path, enc] of [['/app.js', 'gzip'], ['/app.js', 'identity'], ['/styles.css', 'gzip']]) {
+    const first = await fetch(app.base + path, { headers: { 'accept-encoding': enc } });
+    const etag = first.headers.get('etag');
+    assert.match(etag, /^"[0-9a-f]{20}(-gzip)?"$/);
+    assert.equal(first.headers.get('cache-control'), 'no-cache');
+    const again = await fetch(app.base + path, { headers: { 'accept-encoding': enc, 'if-none-match': etag } });
+    assert.equal(again.status, 304, `${path} ${enc}`);
+    assert.equal((await again.text()).length, 0);
+    assert.equal(again.headers.get('content-security-policy') !== null, true, 'security headers stay on a 304');
+  }
+  const stale = await fetch(app.base + '/app.js', { headers: { 'if-none-match': '"nope"' } });
+  assert.equal(stale.status, 200);
+});
+
 test('self-hosted fonts are served as woff2 with a long immutable cache and no gzip', async () => {
   for (const p of ['/fonts/gloock-latin-400-normal.woff2', '/fonts/hanken-grotesk-latin-wght-normal.woff2']) {
     const res = await fetch(app.base + p, { headers: { 'accept-encoding': 'gzip' } });

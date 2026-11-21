@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
@@ -54,7 +55,8 @@ function loadStatic(dir) {
   for (const [route, [file, type]] of Object.entries(STATIC_FILES)) {
     const raw = fs.readFileSync(path.join(dir, file));
     // woff2 is already compressed; gzip everything else once at start-up.
-    files.set(route, { type, raw, gzip: type === 'font/woff2' ? null : zlib.gzipSync(raw, { level: 9 }) });
+    const etag = `"${createHash('sha256').update(raw).digest('hex').slice(0, 20)}"`;
+    files.set(route, { type, raw, etag, gzip: type === 'font/woff2' ? null : zlib.gzipSync(raw, { level: 9 }) });
   }
   return files;
 }
@@ -259,14 +261,19 @@ export function createApp({
       if (req.method === 'GET' && statics.has(route)) {
         const f = statics.get(route);
         const gz = f.gzip !== null && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
-        const cache =
-          f.type === 'font/woff2' ? 'public, max-age=31536000, immutable'
-          : route === '/' || route === '/index.html' ? 'no-cache'
-          : 'public, max-age=300';
+        const immutable = f.type === 'font/woff2';
+        // Pages, script and styles are revalidated with an ETag: an unchanged file costs a 304, never a re-download.
+        const etag = immutable ? null : gz ? f.etag.replace(/"$/, '-gzip"') : f.etag;
+        if (etag && req.headers['if-none-match'] === etag) {
+          res.writeHead(304, { ...SECURITY_HEADERS, 'Cache-Control': 'no-cache', ETag: etag, Vary: 'Accept-Encoding' });
+          res.end();
+          return;
+        }
         res.writeHead(200, {
           ...SECURITY_HEADERS,
           'Content-Type': f.type,
-          'Cache-Control': cache,
+          'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+          ...(etag ? { ETag: etag } : {}),
           Vary: 'Accept-Encoding',
           ...(gz ? { 'Content-Encoding': 'gzip' } : {}),
         });
