@@ -10,6 +10,8 @@ import { startSmoke } from './smokeLoop.js';
  * `lite` halves the clouds, the frame rate and the canvas size for weak devices.
  * Stops when the tab is hidden, when paused, and under reduced motion (which still draws the smoke, still).
  * The drawing and the loop live in ./smokeLoop.js; this component only owns the canvas and passes props in.
+ * @param {{density:number, paused?:boolean, variant?:'page'|'band', boost?:number, className?:string,
+ *   lite?:boolean}} props
  */
 export default function Smoke({
   density,
@@ -19,15 +21,23 @@ export default function Smoke({
   className = '',
   lite = false,
 }) {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef(/** @type {HTMLCanvasElement|null} */ (null));
   const reduced = usePrefersReducedMotion();
   const motion = !paused && !reduced;
-  const shared = useRef({ target: density, current: density, motion, boost, kick: () => {} });
-
-  useEffect(
-    () => startSmoke(canvasRef.current, shared.current, { page: variant === 'page', lite }),
-    [variant, lite],
+  const shared = useRef(
+    /** @type {import('./types.js').SmokeState} */ ({
+      target: density,
+      current: density,
+      motion,
+      boost,
+      kick: () => {},
+    }),
   );
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    return canvas ? startSmoke(canvas, shared.current, { page: variant === 'page', lite }) : undefined;
+  }, [variant, lite]);
 
   // Hand the latest props to the running animation loop (it reads them every frame), then wake it.
   useEffect(() => {

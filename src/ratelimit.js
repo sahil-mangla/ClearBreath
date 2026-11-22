@@ -2,12 +2,16 @@
  * Minimal in-memory fixed-window rate limiter.
  * When the key table is full the oldest live entry is evicted (Map keeps insertion order), so memory stays
  * bounded without one flood of fake keys locking every real user out.
+ * @param {{limit:number, windowMs:number, maxKeys?:number, now?:() => number}} options
  */
 export function createRateLimiter({ limit, windowMs, maxKeys = 10_000, now = Date.now }) {
-  const hits = new Map();
+  const hits = /** @type {Map<string, {count:number, resetAt:number}>} */ (new Map());
 
   return {
-    /** @returns {{allowed:boolean, retryAfterSec:number}} */
+    /**
+     * @param {string} key
+     * @returns {{allowed:boolean, retryAfterSec:number}}
+     */
     check(key) {
       const t = now();
       let entry = hits.get(key);

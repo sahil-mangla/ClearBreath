@@ -7,6 +7,10 @@ import { createApp } from '../src/app.js';
 
 const server = createApp({ env: { TRUST_PROXY: '1', ...process.env }, publicDir: null });
 
+/**
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ */
 export default function handler(req, res) {
   server.emit('request', req, res);
 }

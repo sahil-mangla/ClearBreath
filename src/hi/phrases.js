@@ -1,14 +1,25 @@
 /** Hindi phrases that several action texts share: times of day, commute tips and condition advice. */
 
-/** "1 pm" in Hindi: part of day plus the 12-hour number, e.g. 13 -> "दोपहर 1 बजे". */
+/**
+ * "1 pm" in Hindi: part of day plus the 12-hour number, e.g. 13 -> "दोपहर 1 बजे".
+ * @param {number} h the hour, 0-23
+ */
 export function hiHour(h) {
   const h12 = h % 12 === 0 ? 12 : h % 12;
   const part = h < 4 ? 'रात' : h < 12 ? 'सुबह' : h < 17 ? 'दोपहर' : h < 20 ? 'शाम' : 'रात';
   return `${part} ${h12} बजे`;
 }
 
+/**
+ * A whole number of hours in Hindi: "1 घंटा", "2 घंटे".
+ * @param {number} n
+ */
+export const hiHours = (n) => (n === 1 ? '1 घंटा' : `${n} घंटे`);
+
+/** @type {Record<string, string>} */
 export const DAY_HI = { today: 'आज', tomorrow: 'कल' };
 
+/** Per commute mode: [title, detail]. @type {Record<string, string[]>} */
 export const COMMUTE_TIPS = {
   car: [
     'खिड़कियाँ बंद रखें और AC रीसर्कुलेट पर चलाएँ',
@@ -35,6 +46,7 @@ export const COMMUTE_TIPS = {
 
 export const HEPA_IMPACT = 'HEPA प्यूरीफ़ायर बंद कमरे में घर के अंदर का PM2.5 आमतौर पर लगभग 50-80% घटा देते हैं';
 
+/** @type {Record<string, string>} */
 export const CONDITION_ADVICE_HI = {
   asthma:
     'अस्थमा: अपना राहत देने वाला इनहेलर साथ रखें और डॉक्टर की बताई अस्थमा कार्ययोजना का पालन करें। स्मॉग वाले दिनों में नियमित दवाएँ न छोड़ें।',

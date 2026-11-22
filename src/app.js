@@ -12,35 +12,20 @@ import { loadStatic, serveStatic } from './static.js';
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
+/**
+ * @param {string} allow the methods the route accepts, for the Allow header
+ */
 const methodNotAllowed = (allow) =>
   new HttpError(405, 'Method not allowed.', { code: 'bad_method', headers: { Allow: allow } });
 
 /**
- * Build the HTTP server (not yet listening). Dependencies are injectable for testing.
- * Pass `publicDir: null` to serve the API only (static hosting handled elsewhere, e.g. a CDN).
- * @param {{env?:Record<string,string|undefined>, fetchImpl?:typeof fetch, now?:() => Date,
- *   publicDir?:string|null}} [options]
+ * Rate-limited JSON API. Throws HttpError for anything that is not a valid call.
+ * @param {{handlers:ReturnType<typeof createHandlers>, limiter:ReturnType<typeof createRateLimiter>,
+ *   trustProxy:boolean}} deps
  */
-export function createApp({
-  env = process.env,
-  fetchImpl = fetch,
-  now = () => new Date(),
-  publicDir = PUBLIC_DIR,
-} = {}) {
-  const statics = publicDir ? loadStatic(publicDir) : new Map();
-  const air = createAirClient({ fetchImpl });
-  const llm = createLlm({
-    apiKey: env.GEMINI_API_KEY,
-    model: env.GEMINI_MODEL || undefined,
-    maxCallsPerMin: Number(env.GEMINI_MAX_CALLS_PER_MIN) || undefined,
-    fetchImpl,
-  });
-  const limiter = createRateLimiter({ limit: Number(env.RATE_LIMIT_PER_MIN) || 20, windowMs: 60_000 });
-  const trustProxy = env.TRUST_PROXY === '1';
-  const handlers = createHandlers({ air, llm, now });
-
-  /** Rate-limited JSON API. Throws HttpError for anything that is not a valid call. */
-  async function routeApi(req, res, url) {
+function createApiRouter({ handlers, limiter, trustProxy }) {
+  /** @param {import('./types.js').Req} req @param {import('./types.js').Res} res @param {URL} url */
+  return async function routeApi(req, res, url) {
     const limit = limiter.check(clientIp(req, trustProxy));
     if (!limit.allowed) {
       throw new HttpError(429, 'Too many requests. Please wait a moment and try again.', {
@@ -64,8 +49,50 @@ export function createApp({
       default:
         throw new HttpError(404, 'Not found.', { code: 'not_found' });
     }
-  }
+  };
+}
 
+/**
+ * Known errors become their own status and message; anything else is logged and answered with a plain 500.
+ * @param {import('./types.js').Res} res
+ * @param {unknown} err
+ */
+function respondWithError(res, err) {
+  if (err instanceof HttpError) {
+    const { headers, ...rest } = err.extra ?? {};
+    sendJson(res, err.status, { error: err.message, ...rest }, headers);
+    return;
+  }
+  console.error(`[server] unexpected error: ${err instanceof Error ? err.message : String(err)}`);
+  if (!res.headersSent)
+    sendJson(res, 500, { error: 'Something went wrong on our side. Please try again.', code: 'server' });
+}
+
+/**
+ * Build the HTTP server (not yet listening). Dependencies are injectable for testing.
+ * Pass `publicDir: null` to serve the API only (static hosting handled elsewhere, e.g. a CDN).
+ * @param {{env?:Record<string,string|undefined>, fetchImpl?:typeof fetch, now?:() => Date,
+ *   publicDir?:string|null}} [options]
+ */
+export function createApp({
+  env = process.env,
+  fetchImpl = fetch,
+  now = () => new Date(),
+  publicDir = PUBLIC_DIR,
+} = {}) {
+  const statics = publicDir ? loadStatic(publicDir) : new Map();
+  const air = createAirClient({ fetchImpl });
+  const llm = createLlm({
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL || undefined,
+    maxCallsPerMin: Number(env.GEMINI_MAX_CALLS_PER_MIN) || undefined,
+    fetchImpl,
+  });
+  const limiter = createRateLimiter({ limit: Number(env.RATE_LIMIT_PER_MIN) || 20, windowMs: 60_000 });
+  const trustProxy = env.TRUST_PROXY === '1';
+  const routeApi = createApiRouter({ handlers: createHandlers({ air, llm, now }), limiter, trustProxy });
+
+  /** @param {import('./types.js').Req} req @param {import('./types.js').Res} res */
   async function route(req, res) {
     const url = new URL(req.url ?? '/', 'http://localhost');
     const { pathname } = url;
@@ -84,14 +111,7 @@ export function createApp({
     try {
       await route(req, res);
     } catch (err) {
-      if (err instanceof HttpError) {
-        const { headers, ...rest } = err.extra ?? {};
-        sendJson(res, err.status, { error: err.message, ...rest }, headers);
-        return;
-      }
-      console.error(`[server] unexpected error: ${err?.message}`);
-      if (!res.headersSent)
-        sendJson(res, 500, { error: 'Something went wrong on our side. Please try again.', code: 'server' });
+      respondWithError(res, err);
     }
   });
 

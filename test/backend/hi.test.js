@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyTexts, builtinTexts, collectTexts, DISCLAIMER_HI, hiHour, publicText } from '../../src/hi.js';
 import { sameNumbers, hasDevanagari } from '../../src/determinism.js';
+import { grid } from '../helpers/grid.js';
 import { buildPlan, estimateExposure, fmtHour } from '../../src/rules.js';
 
 const WINDOW = { bestHour: 13, bestPm25: 140, worstHour: 8, worstPm25: 260, bestDay: 'today' };
@@ -18,64 +19,64 @@ test('hiHour speaks the same hour number as fmtHour, with the right part of day'
   assert.equal(hiHour(0), 'रात 12 बजे');
 });
 
+const HOUSEHOLDS = [
+  { children: 0, seniors: 0, conditions: [] },
+  { children: 2, seniors: 0, conditions: ['asthma'] },
+  { children: 0, seniors: 1, conditions: [] },
+  { children: 1, seniors: 1, conditions: ['heart'] },
+];
+const PM25_BY_LEVEL = [10, 40, 70, 120, 220, 400];
+const EVERY_PLAN = {
+  cityKey: ['delhi', 'mumbai'],
+  levelIndex: [0, 1, 2, 3, 4, 5],
+  now: [0, 3, 9, 10].map((m) => new Date(Date.UTC(2026, m, 15, 6))),
+  commute: ['bus_metro', 'car', 'auto_cab', 'two_wheeler', 'walk_cycle', 'wfh'],
+  cooking: ['lpg', 'png', 'induction', 'biomass'],
+  heating: ['none', 'electric', 'wood_coal'],
+  household: HOUSEHOLDS,
+  hasPurifier: [false, true],
+  window: [null, WINDOW],
+};
+
+/** Check one scenario: Hindi exists for every action and alert, with the same figures as the English. */
+function assertHindiMatches(s) {
+  const { cityKey, levelIndex, now, commute, cooking, heating, household, hasPurifier, window } = s;
+  const profile = {
+    city: cityKey,
+    adults: 2,
+    ...household,
+    commute,
+    commuteKm: 12,
+    cooking,
+    heating,
+    hasPurifier,
+    hasN95: hasPurifier,
+    lang: 'hi',
+    notes: '',
+    manualPm25: null,
+  };
+  const pm25 = PM25_BY_LEVEL[levelIndex];
+  const plan = buildPlan({ levelIndex, pm25, profile, cityKey, window, now });
+  const exposure = estimateExposure({ pm25, profile, window });
+  const en = collectTexts(plan, exposure, DISCLAIMER);
+  const hi = builtinTexts(plan, exposure);
+  const where = [cityKey, `L${levelIndex}`, commute, cooking, heating, JSON.stringify(household)]
+    .concat(`purifier=${hasPurifier}`, `forecast=${Boolean(window)}`)
+    .join(' ');
+  assert.ok(hi, `${where}: an action or alert has no Hindi entry`);
+  assert.equal(hi.length, en.length, where);
+  hi.forEach((t, i) => {
+    assert.ok(hasDevanagari(t), `${where} #${i}: not Hindi: ${t}`);
+    assert.ok(sameNumbers(en[i], t), `${where} #${i}: figures differ\n  en: ${en[i]}\n  hi: ${t}`);
+    assert.ok(!/undefined|NaN|\{|\}/.test(t), `${where} #${i}: template leak: ${t}`);
+  });
+}
+
 test('every plan the rules engine can produce has built-in Hindi with the same figures', () => {
-  const months = [0, 3, 9, 10].map((m) => new Date(Date.UTC(2026, m, 15, 6)));
   let plans = 0;
-  for (const cityKey of ['delhi', 'mumbai']) {
-    for (const levelIndex of [0, 1, 2, 3, 4, 5]) {
-      for (const now of months) {
-        for (const commute of ['bus_metro', 'car', 'auto_cab', 'two_wheeler', 'walk_cycle', 'wfh']) {
-          for (const cooking of ['lpg', 'png', 'induction', 'biomass']) {
-            for (const heating of ['none', 'electric', 'wood_coal']) {
-              for (const [children, seniors, conditions] of [
-                [0, 0, []],
-                [2, 0, ['asthma']],
-                [0, 1, []],
-                [1, 1, ['heart']],
-              ]) {
-                for (const hasPurifier of [false, true]) {
-                  for (const window of [null, WINDOW]) {
-                    const profile = {
-                      city: cityKey,
-                      adults: 2,
-                      children,
-                      seniors,
-                      conditions,
-                      commute,
-                      commuteKm: 12,
-                      cooking,
-                      heating,
-                      hasPurifier,
-                      hasN95: hasPurifier,
-                      lang: 'hi',
-                      notes: '',
-                      manualPm25: null,
-                    };
-                    const pm25 = [10, 40, 70, 120, 220, 400][levelIndex];
-                    const plan = buildPlan({ levelIndex, pm25, profile, cityKey, window, now });
-                    const exposure = estimateExposure({ pm25, profile, window });
-                    const en = collectTexts(plan, exposure, DISCLAIMER);
-                    const hi = builtinTexts(plan, exposure);
-                    const where = `${cityKey} L${levelIndex} ${commute} ${cooking} ${heating} kids${children} seniors${seniors} pur${hasPurifier} win${Boolean(window)}`;
-                    assert.ok(hi, `${where}: an action or alert has no Hindi entry`);
-                    assert.equal(hi.length, en.length, where);
-                    hi.forEach((t, i) => {
-                      assert.ok(hasDevanagari(t), `${where} #${i}: not Hindi: ${t}`);
-                      assert.ok(
-                        sameNumbers(en[i], t),
-                        `${where} #${i}: figures differ\n  en: ${en[i]}\n  hi: ${t}`,
-                      );
-                      assert.ok(!/undefined|NaN|\{|\}/.test(t), `${where} #${i}: template leak: ${t}`);
-                    });
-                    plans += 1;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+  for (const scenario of grid(EVERY_PLAN)) {
+    assertHindiMatches(scenario);
+    plans += 1;
   }
   assert.ok(plans > 10_000, `covered ${plans} plans`);
 });

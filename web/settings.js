@@ -1,4 +1,5 @@
 import { DEFAULTS as SERVER_DEFAULTS } from '../src/limits.js';
+import { DEFAULT_LANG } from '../src/languages.js';
 import { LANGS } from './strings.js';
 
 const LANG_KEY = 'clearbreath.lang';
@@ -7,9 +8,9 @@ const LANG_KEY = 'clearbreath.lang';
 export function storedLang() {
   try {
     const v = localStorage.getItem(LANG_KEY);
-    return v && LANGS.includes(v) ? v : 'en';
+    return v && LANGS.includes(v) ? v : DEFAULT_LANG;
   } catch {
-    return 'en'; // storage can be blocked; the page works without it
+    return DEFAULT_LANG; // storage can be blocked; the page works without it
   }
 }
 
@@ -26,12 +27,15 @@ export const DEFAULTS = {
   heating: SERVER_DEFAULTS.heating,
   hasPurifier: false,
   hasN95: false,
-  lang: 'en',
+  lang: DEFAULT_LANG,
   notes: '',
   manualPm25: '',
 };
 
-/** Remember the language for the next visit. Storage can be blocked, so a failure just means this visit only. */
+/**
+ * Remember the language for the next visit. Storage can be blocked, so a failure just means this visit only.
+ * @param {string} lang
+ */
 export function saveLang(lang) {
   try {
     localStorage.setItem(LANG_KEY, lang);

@@ -39,6 +39,7 @@ async function request(path, { signal, ...options } = {}) {
   }
 }
 
+/** @param {unknown} body */
 const json = (body) => ({
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -48,5 +49,7 @@ const json = (body) => ({
 export const getCities = () => request('/api/cities');
 /** @param {string} city @param {AbortSignal} [signal] */
 export const getAir = (city, signal) => request(`/api/air?city=${encodeURIComponent(city)}`, { signal });
+/** @param {unknown} body */
 export const postPlan = (body) => request('/api/plan', json(body));
+/** @param {unknown} body */
 export const postAsk = (body) => request('/api/ask', json(body));

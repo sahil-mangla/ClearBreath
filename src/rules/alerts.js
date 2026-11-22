@@ -1,6 +1,8 @@
 /** @typedef {import('./helpers.js').PlanContext} PlanContext */
 /** @typedef {{key:string, level:string, text:string}} Alert */
 
+import { runBuilders } from './helpers.js';
+
 /** Alert banners shown above the plan. Order: severe air, then carbon monoxide, stubble smoke, medical care. */
 
 const SEVERE_TEXT =
@@ -8,6 +10,7 @@ const SEVERE_TEXT =
 const VERY_POOR_TEXT =
   'Very poor air for sensitive people: keep outdoor time short, keep rescue medicines handy, and stay in your cleanest room.';
 
+/** @param {PlanContext} ctx */
 function airAlert({ levelIndex, poor, vulnerable }) {
   if (levelIndex < 4 && !(poor && vulnerable)) return null;
   return {
@@ -17,6 +20,7 @@ function airAlert({ levelIndex, poor, vulnerable }) {
   };
 }
 
+/** @param {PlanContext} ctx */
 function carbonMonoxideAlert({ profile }) {
   if (profile.heating !== 'wood_coal') return null;
   return {
@@ -26,6 +30,7 @@ function carbonMonoxideAlert({ profile }) {
   };
 }
 
+/** @param {PlanContext} ctx */
 function stubbleAlert({ stubbleSeason }) {
   if (!stubbleSeason) return null;
   return {
@@ -35,6 +40,7 @@ function stubbleAlert({ stubbleSeason }) {
   };
 }
 
+/** @param {PlanContext} ctx */
 function medicalAlert({ poor, vulnerable }) {
   if (!poor || !vulnerable) return null;
   return {
@@ -47,5 +53,8 @@ function medicalAlert({ poor, vulnerable }) {
 /** @type {Array<(ctx: PlanContext) => Alert | null>} */
 const BUILDERS = [airAlert, carbonMonoxideAlert, stubbleAlert, medicalAlert];
 
-/** @param {PlanContext} ctx */
-export const alertsFor = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);
+/**
+ * @param {PlanContext} ctx
+ * @returns {Alert[]}
+ */
+export const alertsFor = (ctx) => runBuilders(BUILDERS, ctx);

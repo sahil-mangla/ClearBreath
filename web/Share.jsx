@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useLang, useT } from './i18n.js';
 import { planToText } from './share.js';
 
-/** Print the plan, or copy it as plain text for a family or RWA chat. */
+/**
+ * Print the plan, or copy it as plain text for a family or RWA chat.
+ * @param {{result:import('./types.js').PlanResult}} props
+ */
 export default function Share({ result }) {
   const t = useT();
   const lang = useLang();

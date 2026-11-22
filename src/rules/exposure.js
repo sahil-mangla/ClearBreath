@@ -11,30 +11,46 @@ import {
 } from './constants.js';
 import { needsMask, percent, round1 } from './helpers.js';
 
-const OTHER_OUTDOOR_HOURS = 1;
+export const OTHER_OUTDOOR_HOURS = 1;
 const MAX_COMMUTE_HOURS = 3;
 
+/**
+ * @param {import('../types.js').PlanProfile} profile
+ * @returns {number} hours spent commuting in a day
+ */
 const commuteHours = (profile) =>
   profile.commute === 'wfh'
     ? 0
     : Math.min(MAX_COMMUTE_HOURS, (profile.commuteKm * 2) / COMMUTE_SPEED[profile.commute]);
 
-/** Indoor PM2.5 as a share of outdoor: today as usual (`planned` false) or following the plan. */
+/**
+ * Indoor PM2.5 as a share of outdoor: today as usual (`planned` false) or following the plan.
+ * @param {Pick<import('../types.js').PlanProfile, 'hasPurifier'>} profile
+ * @param {boolean} planned
+ */
 export const indoorRatio = (profile, planned) => {
   if (profile.hasPurifier) return planned ? INDOOR_RATIO.planPurifier : INDOOR_RATIO.baselinePurifier;
   return planned ? INDOOR_RATIO.planNone : INDOOR_RATIO.baselineNone;
 };
 
+/**
+ * @param {{commuteH:number, profile:import('../types.js').PlanProfile, polluted:boolean, masked:boolean}} input
+ * @returns {string[]}
+ */
 function describeAssumptions({ commuteH, profile, polluted, masked }) {
   const baselineIndoor = percent(indoorRatio(profile, false));
   const planIndoor = percent(indoorRatio(profile, true));
+  const maskNote = masked
+    ? `a fitted N95 outdoors (about ${percent(1 - MASK_FACTOR)}% effective in real use), `
+    : '';
   const withPlan = polluted
-    ? `With the plan: ${masked ? `a fitted N95 outdoors (about ${percent(1 - MASK_FACTOR)}% effective in real use), ` : ''}` +
+    ? `With the plan: ${maskNote}` +
       `outdoor errands in the cleanest forecast hour, windows shut at peak times and ` +
       `${profile.hasPurifier ? 'your purifier running' : 'a sealed room'} (indoor air about ${planIndoor}% of outdoor).`
     : 'With the plan: the air is acceptable today, so the plan changes little and your modelled exposure stays about the same.';
   return [
-    `You spend about ${commuteH.toFixed(1)} h commuting, ${OTHER_OUTDOOR_HOURS} h on other outdoor errands, and the rest indoors.`,
+    `You spend about ${commuteH.toFixed(1)} h commuting, ${OTHER_OUTDOOR_HOURS} h on other outdoor ` +
+      `errands, and the rest indoors.`,
     `Today as usual: no mask outdoors; indoor air is about ${baselineIndoor}% of outdoor levels.`,
     withPlan,
     'Simplified model for illustration. Real exposure varies with fit, ventilation and traffic.',
@@ -44,6 +60,9 @@ function describeAssumptions({ commuteH, profile, polluted, masked }) {
 /**
  * Illustrative time-weighted PM2.5 exposure model: "today as usual" vs "following the plan".
  * Deliberately simple and transparent; every assumption is returned to the caller.
+ * @param {{pm25:number, profile:import('../types.js').PlanProfile,
+ *   window:import('../types.js').ForecastWindow|null, levelIndex?:number}} input
+ * @returns {import('../types.js').Exposure}
  */
 export function estimateExposure({
   pm25,
@@ -62,7 +81,10 @@ export function estimateExposure({
   const baselineIndoor = indoorRatio(profile, false);
   const planIndoor = polluted ? indoorRatio(profile, true) : baselineIndoor;
 
-  /** Time-weighted daily average: commute, other outdoor errands, then the hours indoors. */
+  /**
+   * Time-weighted daily average: commute, other outdoor errands, then the hours indoors.
+   * @param {number} commuteConc @param {number} otherConc @param {number} maskFactor @param {number} indoorShare
+   */
   const dailyAverage = (commuteConc, otherConc, maskFactor, indoorShare) =>
     (commuteH * commuteConc * cabin * (cabin === 1 ? maskFactor : 1) +
       OTHER_OUTDOOR_HOURS * otherConc * maskFactor +

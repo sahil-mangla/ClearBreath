@@ -21,11 +21,17 @@ Rules:
 - Be concrete, kind and brief. Prefer low-cost, India-relevant advice. Write in Hindi (Devanagari) when facts.lang is "hi", otherwise in English.
 - Never include links, code, or markup. Plain sentences only.`;
 
-export const BRIEFING_INSTRUCTION = `${SYSTEM_BASE}
-Task: write a warm briefing of at most ${BRIEFING_MAX_WORDS} words explaining today's air quality for this household, why the top actions matter (cite figures from facts only), and one encouraging closing line. Then choose up to ${MAX_TOP_ACTIONS} of facts.candidateActions ids as topActionIds, most important first.`;
+export const BRIEFING_INSTRUCTION =
+  `${SYSTEM_BASE}
+Task: write a warm briefing of at most ${BRIEFING_MAX_WORDS} words explaining today's air quality for this ` +
+  `household, why the top actions matter (cite figures from facts only), and one encouraging closing line. ` +
+  `Then choose up to ${MAX_TOP_ACTIONS} of facts.candidateActions ids as topActionIds, most important first.`;
 
-export const ANSWER_INSTRUCTION = `${SYSTEM_BASE}
-Task: answer the user's question in at most ${ANSWER_MAX_WORDS} words, using facts for context. If it is not about air quality, health protection from pollution, or sustainable low-emission living, politely decline in one sentence and offer to help with those topics.`;
+export const ANSWER_INSTRUCTION =
+  `${SYSTEM_BASE}
+Task: answer the user's question in at most ${ANSWER_MAX_WORDS} words, using facts for context. ` +
+  `If it is not about air quality, health protection from pollution, or sustainable low-emission living, ` +
+  `politely decline in one sentence and offer to help with those topics.`;
 
 export const TRANSLATE_INSTRUCTION = `You translate short air-quality advice for Indian families from English into clear, natural Hindi (Devanagari), the way a helpful neighbour would say it.
 Rules:

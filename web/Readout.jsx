@@ -13,7 +13,9 @@ const timeFmt = new Intl.DateTimeFormat('en-IN', {
   timeZone: 'Asia/Kolkata',
 });
 
+/** @param {string|null|undefined} iso */
 function observed(iso) {
+  if (!iso) return '';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? '' : `${timeFmt.format(d)} IST`;
 }
@@ -84,10 +86,13 @@ export default function Readout({ cities, city, onCity, air, compact }) {
   );
 }
 
-/** The six CPCB bands drawn to scale, with a marker where today sits. */
+/**
+ * The six CPCB bands drawn to scale, with a marker where today sits.
+ * @param {{aqi?:number, levelIndex?:number}} props
+ */
 export function BandScale({ aqi, levelIndex }) {
   const t = useT();
-  const has = Number.isFinite(aqi);
+  const has = typeof aqi === 'number' && Number.isFinite(aqi);
   const pos = has ? Math.min(100, (aqi / SCALE_MAX) * 100) : 0;
   return (
     <figure className="scale">
@@ -97,7 +102,7 @@ export function BandScale({ aqi, levelIndex }) {
             key={b.name}
             className={`scale__band${has && levelIndex === i ? ' is-now' : ''}`}
             data-level={i}
-            style={{ flexGrow: b.to - b.from + (i === 0 ? 1 : 0) }}
+            style={cssVars({ '--w': b.to - b.from + (i === 0 ? 1 : 0) })}
           >
             <span className="scale__name">{t(`band.${i}`)}</span>
             <span className="scale__range num">{t('scale.range', { from: b.from, to: b.to })}</span>

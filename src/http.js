@@ -14,6 +14,11 @@ export const SECURITY_HEADERS = {
 
 /** An error that maps to an HTTP response. `extra.headers` become response headers; the rest goes in the JSON body. */
 export class HttpError extends Error {
+  /**
+   * @param {number} status
+   * @param {string} message
+   * @param {{code?:string, headers?:Record<string,string>, details?:string[], fields?:string[]}} [extra]
+   */
   constructor(status, message, extra) {
     super(message);
     this.status = status;
@@ -56,7 +61,7 @@ export function readJson(req, res) {
       reject(tooLarge());
       return;
     }
-    const chunks = [];
+    const chunks = /** @type {Buffer[]} */ ([]);
     let size = 0;
     let rejected = false;
     req.on('data', (chunk) => {
@@ -85,7 +90,11 @@ export function readJson(req, res) {
   });
 }
 
-/** Expand an IPv6 address (with optional `::`) to its eight groups. */
+/**
+ * Expand an IPv6 address (with optional `::`) to its eight groups.
+ * @param {string} ip
+ * @returns {string[]}
+ */
 function ipv6Groups(ip) {
   const [head, tail = ''] = ip.split('::');
   const first = head ? head.split(':') : [];
@@ -93,7 +102,10 @@ function ipv6Groups(ip) {
   return [...first, ...Array(Math.max(0, 8 - first.length - last.length)).fill('0'), ...last];
 }
 
-/** One IPv6 subscriber usually owns a whole /64, so key on the /64 or a single host could mint endless keys. */
+/**
+ * One IPv6 subscriber usually owns a whole /64, so key on the /64 or a single host could mint endless keys.
+ * @param {string} ip
+ */
 export function rateKey(ip) {
   if (!ip.includes(':') || ip.includes('.')) return ip; // IPv4 and IPv4-mapped addresses stay as they are
   return `${ipv6Groups(ip)

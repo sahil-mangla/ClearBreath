@@ -1,3 +1,5 @@
+/** @typedef {import('./helpers.js').PlanContext} PlanContext */
+
 import { CITIES } from '../cities.js';
 import { alertsFor } from './alerts.js';
 import { alternativeActions, weeklyCo2Saved } from './alternatives.js';
@@ -6,7 +8,12 @@ import { isVulnerable, istMonth, top } from './helpers.js';
 import { indoorActions } from './indoor.js';
 import { routineActions } from './routine.js';
 
-/** Everything the action builders need, computed once from the request. */
+/**
+ * Everything the action builders need, computed once from the request.
+ * @param {{levelIndex:number, pm25:number, profile:import('../types.js').PlanProfile,
+ *   cityKey:import('../cities.js').CityKey, window:import('../types.js').ForecastWindow|null, now:Date}} input
+ * @returns {PlanContext}
+ */
 function planContext({ levelIndex, pm25, profile, cityKey, window: forecast, now }) {
   const city = CITIES[cityKey];
   const month = istMonth(now);
@@ -28,13 +35,11 @@ function planContext({ levelIndex, pm25, profile, cityKey, window: forecast, now
 
 /**
  * Build the personalised plan.
- * @param {object} args
- * @param {number} args.levelIndex   0-5 index into LEVELS
- * @param {number} args.pm25         current PM2.5 in µg/m³
- * @param {object} args.profile      validated household profile
- * @param {string} args.cityKey
- * @param {object|null} args.window  result of bestWindow()
- * @param {Date} [args.now]
+ * @param {{levelIndex:number, pm25:number, profile:import('../types.js').PlanProfile,
+ *   cityKey:import('../cities.js').CityKey, window:import('../types.js').ForecastWindow|null, now?:Date}} args
+ *   `levelIndex` is the 0-5 index into LEVELS, `pm25` the current reading in µg/m³ and `window` the result of
+ *   bestWindow().
+ * @returns {import('../types.js').Plan}
  */
 export function buildPlan({ levelIndex, pm25, profile, cityKey, window: forecast, now = new Date() }) {
   const ctx = planContext({ levelIndex, pm25, profile, cityKey, window: forecast, now });
@@ -48,5 +53,8 @@ export function buildPlan({ levelIndex, pm25, profile, cityKey, window: forecast
   };
 }
 
-/** The three most important actions across the whole plan, most important first. */
+/**
+ * The three most important actions across the whole plan, most important first.
+ * @param {import('../types.js').Plan} plan
+ */
 export const topActions = (plan) => top([...plan.routine, ...plan.indoor, ...plan.alternatives], 3);

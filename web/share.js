@@ -1,12 +1,19 @@
+import { DEFAULT_LANG } from '../src/languages.js';
 import { cityLabel, translate } from './strings.js';
 
+/** @typedef {import('./types.js').PlanAction} PlanAction */
+
+/** @param {PlanAction[]} items */
 const flatten = (items) => items.flatMap((a) => [`- ${a.title}`, `  ${a.detail}`, `  ${a.impact}`]);
 
 /**
  * The plan as plain text for pasting into a family or RWA chat. Same facts as the page, no markup,
  * numbers exactly as the server computed them.
+ * @param {import('./types.js').PlanResult} result
+ * @param {string} [lang]
  */
-export function planToText(result, lang = 'en') {
+export function planToText(result, lang = DEFAULT_LANG) {
+  /** @param {string} k @param {Record<string, string|number>} [v] */
   const t = (k, v) => translate(lang, k, v);
   const { air, exposure: e, plan, briefing } = result;
   const lines = [
@@ -23,6 +30,7 @@ export function planToText(result, lang = 'en') {
       india: e.indiaStandard,
     }),
   ];
+  /** @type {[string, PlanAction[]][]} */
   const groups = [
     ['group.routine', plan.routine],
     ['group.indoor', plan.indoor],

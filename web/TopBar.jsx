@@ -2,7 +2,11 @@ import LangToggle from './LangToggle.jsx';
 import { useT } from './i18n.js';
 import Smoke from './Smoke.jsx';
 
-/** The sticky bar: brand, language switch, the motion pause button and a strip of smoke behind them. */
+/**
+ * The sticky bar: brand, language switch, the motion pause button and a strip of smoke behind them.
+ * @param {{lowPower:boolean, density:number, paused:boolean, reduced:boolean, lang:string,
+ *   onLang:(lang:string) => void, onTogglePause:() => void}} props
+ */
 export default function TopBar({ lowPower, density, paused, reduced, lang, onLang, onTogglePause }) {
   const t = useT();
   return (

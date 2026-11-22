@@ -45,6 +45,11 @@ export const HEALTH_IMPACT_HI = Object.freeze([
   'स्वस्थ लोगों पर असर पड़ता है और पहले से बीमार लोगों पर गंभीर असर पड़ता है।',
 ]);
 
+/**
+ * @param {unknown} conc  µg/m³
+ * @param {number[][]} bands rows of [concLow, concHigh, indexLow, indexHigh]
+ * @returns {number|null}
+ */
 function subIndex(conc, bands) {
   if (typeof conc !== 'number' || !Number.isFinite(conc) || conc < 0) return null;
   for (const [lo, hi, iLo, iHi] of bands) {
@@ -62,7 +67,10 @@ export const BANDS = Object.freeze(
 );
 export const SCALE_MAX = 500;
 
-/** Map an AQI value (0-500) to a LEVELS index. */
+/**
+ * Map an AQI value (0-500) to a LEVELS index.
+ * @param {number} value
+ */
 export function levelIndexFor(value) {
   const i = BANDS.findIndex((b) => value <= b.to);
   return i === -1 ? BANDS.length - 1 : i;
@@ -70,7 +78,7 @@ export function levelIndexFor(value) {
 
 /**
  * @param {{pm25?: number|null, pm10?: number|null}} conc  µg/m³
- * @returns {{value:number, levelIndex:number, category:string, dominant:'PM2.5'|'PM10'}|null}
+ * @returns {import('./types.js').Aqi|null}
  */
 export function computeAqi({ pm25, pm10 }) {
   const a = subIndex(pm25, PM25_BANDS);

@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { computeAqi } from '../../src/aqi.js';
+import { grid } from '../helpers/grid.js';
 import { buildPlan, estimateExposure, fallbackBriefing, topActions } from '../../src/rules.js';
 
 const EXPECTED = '7d2f052691e1e553';
@@ -22,25 +23,18 @@ const HOUSEHOLDS = [
 ];
 const MONTHS = [0, 9, 10];
 const FLAGS = [false, true];
-
-function* profiles() {
-  for (const household of HOUSEHOLDS)
-    for (const commute of COMMUTES)
-      for (const cooking of COOKING)
-        for (const heating of HEATING)
-          for (const hasPurifier of FLAGS)
-            for (const hasN95 of FLAGS)
-              yield {
-                adults: 2,
-                ...household,
-                commute,
-                commuteKm: 12,
-                cooking,
-                heating,
-                hasPurifier,
-                hasN95,
-              };
-}
+// Listed in loop order, outermost first: the digest depends on the order scenarios are visited.
+const SCENARIOS = {
+  cityKey: CITIES,
+  pm25: PM25,
+  household: HOUSEHOLDS,
+  commute: COMMUTES,
+  cooking: COOKING,
+  heating: HEATING,
+  hasPurifier: FLAGS,
+  hasN95: FLAGS,
+  month: MONTHS,
+};
 
 const forecastFor = (pm25) =>
   pm25 % 2 === 0
@@ -53,7 +47,20 @@ const forecastFor = (pm25) =>
       }
     : null;
 
-function outputsFor({ cityKey, pm25, profile, month }) {
+const profileOf = ({ household, commute, cooking, heating, hasPurifier, hasN95 }) => ({
+  adults: 2,
+  ...household,
+  commute,
+  commuteKm: 12,
+  cooking,
+  heating,
+  hasPurifier,
+  hasN95,
+});
+
+function outputsFor(scenario) {
+  const { cityKey, pm25, month } = scenario;
+  const profile = profileOf(scenario);
   const aqi = computeAqi({ pm25 });
   const window = forecastFor(pm25);
   const now = new Date(Date.UTC(2026, month, 15, 6));
@@ -66,13 +73,10 @@ function outputsFor({ cityKey, pm25, profile, month }) {
 test('the rules engine output is unchanged across 27,648 scenarios', () => {
   const digest = createHash('sha256');
   let cases = 0;
-  for (const cityKey of CITIES)
-    for (const pm25 of PM25)
-      for (const profile of profiles())
-        for (const month of MONTHS) {
-          digest.update(JSON.stringify(outputsFor({ cityKey, pm25, profile, month })));
-          cases += 1;
-        }
+  for (const scenario of grid(SCENARIOS)) {
+    digest.update(JSON.stringify(outputsFor(scenario)));
+    cases += 1;
+  }
   assert.equal(cases, 27_648);
   assert.equal(digest.digest('hex').slice(0, 16), EXPECTED);
 });

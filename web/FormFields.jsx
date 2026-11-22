@@ -3,12 +3,16 @@ import { useT } from './i18n.js';
 
 const ERRORS_ID = 'form-errors';
 
+/** @param {{show:boolean}} props */
 function FieldError({ show }) {
   const t = useT();
   return show ? <p className="field__error">{t('field.check')}</p> : null;
 }
 
-/** A whole-number input whose range comes from the shared limits. */
+/**
+ * A whole-number input whose range comes from the shared limits.
+ * @param {{id:import('./types.js').NumFieldId, label:string, form:import('./types.js').FormApi}} props
+ */
 export function NumField({ id, label, form }) {
   const [min, max] = LIMITS[id];
   const invalid = form.bad(id);
@@ -32,7 +36,11 @@ export function NumField({ id, label, form }) {
   );
 }
 
-/** A select whose option labels are the strings `${prefix}.${option}`. */
+/**
+ * A select whose option labels are the strings `${prefix}.${option}`.
+ * @param {{id:import('./types.js').PickFieldId, label:string, options:readonly string[], prefix:string,
+ *   form:import('./types.js').FormApi}} props
+ */
 export function PickField({ id, label, options, prefix, form }) {
   const t = useT();
   const invalid = form.bad(id);

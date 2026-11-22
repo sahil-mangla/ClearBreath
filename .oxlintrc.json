@@ -1,7 +1,13 @@
 {
   "plugins": ["react", "oxc"],
   "categories": { "correctness": "error", "suspicious": "warn" },
-  "rules": { "react/react-in-jsx-scope": "off" },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "complexity": ["error", { "max": 12 }],
+    "max-lines-per-function": ["error", { "max": 60, "skipBlankLines": true, "skipComments": true }],
+    "max-params": ["error", { "max": 4 }],
+    "max-depth": ["error", { "max": 4 }]
+  },
   "env": { "browser": true, "node": true, "es2022": true },
   "ignorePatterns": ["public/**", "node_modules/**"]
 }

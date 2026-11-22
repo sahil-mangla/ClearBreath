@@ -1,154 +1,95 @@
 import { useEffect, useRef } from 'react';
 import { usePrefersReducedMotion } from './hooks.js';
-import { clamp, seedFor, windowLit } from './lib.js';
+import { seedFor } from './lib.js';
+import { paintSkyline } from './pixelArt.js';
 import { makeSkyline } from './skyline.js';
+import { token } from './smokeSprites.js';
+import { watchOnScreen } from './visibility.js';
 
 const PIXEL = 5; // CSS pixels per art pixel
 const TICK_MS = 1400; // windows flicker slowly, at a few frames per second at most
 
-const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/** @typedef {{density:number, city:string}} CityState */
 
-function drawBuilding(ctx, b, rows, seedBase, lit, litAlpha, litColor) {
-  const top = rows - b.h;
-  ctx.fillRect(b.x, top, b.w, b.h);
-  if (b.roof === 'step' && b.w > 5) ctx.fillRect(b.x + 1, top - 2, b.w - 2, 2);
-  if (b.roof === 'spire') ctx.fillRect(b.x + Math.floor(b.w / 2), top - 5, 1, 5);
-  if (!lit) return;
-  const prev = ctx.fillStyle;
-  const prevAlpha = ctx.globalAlpha;
-  ctx.fillStyle = litColor;
-  ctx.globalAlpha = litAlpha;
-  for (let y = top + 2; y < rows - 2; y += 3) {
-    for (let x = b.x + 1; x < b.x + b.w - 1; x += 2) {
-      if (lit(seedBase, x, y)) ctx.fillRect(x, y, 1, 1);
-    }
-  }
-  ctx.fillStyle = prev;
-  ctx.globalAlpha = prevAlpha;
-}
+/**
+ * Start drawing the skyline into `canvas`. `live` holds the current { density, city }, read at draw time.
+ * Returns `redraw` (rebuild for a new city or haze) and `stop`.
+ * @param {HTMLCanvasElement} canvas
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {{current:CityState}} live
+ * @param {boolean} animated whether the windows flicker
+ */
+function startCity(canvas, ctx, live, animated) {
+  const colors = {
+    far: token('--haze-smoke'),
+    mid: token('--color-paper-3'),
+    near: token('--color-paper'),
+    lit: token('--color-accent'),
+  };
+  let sky = /** @type {import('./skyline.js').Skyline|null} */ (null);
+  let tick = 0;
+  let onScreen = true;
 
-function drawLandmark(ctx, m, rows) {
-  const base = rows;
-  if (m.type === 'minar') {
-    // A tapering fluted tower in stacked tiers, topped with a small cupola.
-    const tiers = 5;
-    const tierH = Math.floor(m.h / tiers);
-    for (let i = 0; i < tiers; i += 1) {
-      const w = Math.max(2, m.w - i);
-      const x = m.x + Math.floor((m.w - w) / 2);
-      ctx.fillRect(x, base - (i + 1) * tierH, w, tierH);
-      if (i < tiers - 1) ctx.fillRect(x - 1, base - (i + 1) * tierH, w + 2, 1); // balcony
-    }
-    ctx.fillRect(m.x + Math.floor(m.w / 2) - 1, base - m.h - 2, 2, 2);
-  } else {
-    // A war-memorial arch: two piers, a lintel and a stepped top, with the opening cut through.
-    ctx.fillRect(m.x, base - m.h, m.w, m.h);
-    ctx.fillRect(m.x + 2, base - m.h - 2, m.w - 4, 2);
-    ctx.fillRect(m.x + 4, base - m.h - 3, m.w - 8, 1);
-    const ow = Math.floor(m.w * 0.42);
-    ctx.clearRect(
-      m.x + Math.floor((m.w - ow) / 2),
-      base - Math.floor(m.h * 0.72),
-      ow,
-      Math.floor(m.h * 0.72),
-    );
-  }
+  const render = () => {
+    if (!sky) return;
+    const { density, city } = live.current;
+    paintSkyline(ctx, sky, { density, seed: seedFor(city), tick, colors });
+  };
+  /** @param {number} cols @param {number} rows */
+  const rebuild = (cols, rows) => {
+    const { city } = live.current;
+    sky = makeSkyline(seedFor(city), cols, rows, city);
+    render();
+  };
+  const resize = () => {
+    canvas.width = Math.max(40, Math.floor(canvas.clientWidth / PIXEL));
+    canvas.height = Math.max(24, Math.floor(canvas.clientHeight / PIXEL));
+    rebuild(canvas.width, canvas.height);
+  };
+
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas);
+  const stopWatching = watchOnScreen(canvas, (visible) => {
+    onScreen = visible;
+  });
+  resize();
+  const timer = animated
+    ? window.setInterval(() => {
+        if (document.hidden || !onScreen) return;
+        tick += 1;
+        render();
+      }, TICK_MS)
+    : 0;
+
+  return {
+    redraw: () => rebuild(canvas.width, canvas.height),
+    stop: () => {
+      ro.disconnect();
+      stopWatching();
+      window.clearInterval(timer);
+    },
+  };
 }
 
 /**
  * A pixel-art skyline for the chosen city, drawn on a tiny canvas and scaled up without smoothing.
  * Distant towers fade out as the air thickens, so the skyline doubles as a visibility gauge.
  * Windows glow amber and a few flicker. Decorative only.
+ * @param {{city:string, density:number, still?:boolean}} props
  */
 export default function PixelCity({ city, density, still = false }) {
   const canvasRef = useRef(/** @type {HTMLCanvasElement|null} */ (null));
   const reduced = usePrefersReducedMotion();
-  const live = useRef({ density, city });
+  const live = useRef(/** @type {CityState} */ ({ density, city }));
   const redrawRef = useRef(/** @type {(() => void)|null} */ (null));
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return undefined;
-    const colors = {
-      far: token('--haze-smoke'),
-      mid: token('--color-paper-3'),
-      near: token('--color-paper'),
-      lit: token('--color-accent'),
-    };
-    let sky = /** @type {import('./skyline.js').Skyline|null} */ (null);
-    let tick = 0;
-    let timer = 0;
-    let onScreen = true;
-
-    const render = () => {
-      const current = sky;
-      if (!current) return;
-      const { density: d, city: key } = live.current;
-      const seed = seedFor(key);
-      ctx.clearRect(0, 0, current.cols, current.rows);
-      const [far, mid, near] = current.layers;
-      // Far towers vanish into thick smog; mid ones dim; the near row stays solid.
-      const draw = (layer, color, alpha, litAlpha, base) => {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = alpha;
-        for (const b of layer.buildings) {
-          drawBuilding(
-            ctx,
-            b,
-            current.rows,
-            seed + base,
-            litAlpha ? (sd, x, y) => windowLit(sd, x, y, tick) : null,
-            litAlpha,
-            colors.lit,
-          );
-        }
-        ctx.globalAlpha = 1;
-      };
-      draw(far, colors.far, clamp(0.75 - d * 0.5, 0.2, 0.75), 0, 1);
-      draw(mid, colors.mid, clamp(1 - d * 0.35, 0.6, 1), 0.45, 2);
-      ctx.fillStyle = colors.near;
-      draw(near, colors.near, 1, 0.9, 3);
-      ctx.fillStyle = colors.near;
-      for (const m of current.landmarks) drawLandmark(ctx, m, current.rows);
-      ctx.globalAlpha = 1;
-    };
-
-    const build = () => {
-      const cols = Math.max(40, Math.floor(canvas.clientWidth / PIXEL));
-      const rows = Math.max(24, Math.floor(canvas.clientHeight / PIXEL));
-      canvas.width = cols;
-      canvas.height = rows;
-      sky = makeSkyline(seedFor(live.current.city), cols, rows, live.current.city);
-      render();
-    };
-
-    const ro = new ResizeObserver(build);
-    ro.observe(canvas);
-    const io =
-      typeof IntersectionObserver === 'undefined'
-        ? null
-        : new IntersectionObserver(([entry]) => {
-            onScreen = entry.isIntersecting;
-          });
-    io?.observe(canvas);
-    build();
-    if (!reduced && !still) {
-      timer = window.setInterval(() => {
-        if (document.hidden || !onScreen) return;
-        tick += 1;
-        render();
-      }, TICK_MS);
-    }
-    redrawRef.current = () => {
-      sky = makeSkyline(seedFor(live.current.city), canvas.width, canvas.height, live.current.city);
-      render();
-    };
-    return () => {
-      ro.disconnect();
-      io?.disconnect();
-      window.clearInterval(timer);
-    };
+    const { redraw, stop } = startCity(canvas, ctx, live, !reduced && !still);
+    redrawRef.current = redraw;
+    return stop;
   }, [reduced, still]);
 
   // City or haze changed: rebuild the skyline for it and repaint.

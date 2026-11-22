@@ -10,7 +10,18 @@ import {
 import { useLang, useT } from './i18n.js';
 import { errorMessage } from './strings.js';
 
-/** The summary that appears after a failed submit. Focus moves here so keyboard and screen-reader users land on it. */
+/** @typedef {import('./types.js').FormValues} FormValues */
+/** @typedef {import('./types.js').RequestErrors} RequestErrors */
+/**
+ * @typedef {{values:FormValues, set:(patch:Partial<FormValues>) => void,
+ *   onSubmit:(e:import('react').FormEvent) => void, busy:boolean, errors:RequestErrors|null,
+ *   cityName:string}} PlanFormProps
+ */
+
+/**
+ * The summary that appears after a failed submit. Focus moves here so keyboard and screen-reader users land on it.
+ * @param {{errors:RequestErrors}} props
+ */
 function ErrorSummary({ errors }) {
   const lang = useLang();
   const ref = useRef(/** @type {HTMLDivElement|null} */ (null));
@@ -32,6 +43,7 @@ function ErrorSummary({ errors }) {
   );
 }
 
+/** @param {{busy:boolean}} props */
 function FormFoot({ busy }) {
   const t = useT();
   return (
@@ -51,10 +63,13 @@ function FormFoot({ busy }) {
   );
 }
 
-/** Household form. State lives in the parent so the live city and the plan stay in sync. */
+/**
+ * Household form. State lives in the parent so the live city and the plan stay in sync.
+ * @param {PlanFormProps} props
+ */
 export default function PlanForm({ values, set, onSubmit, busy, errors, cityName }) {
   const t = useT();
-  const form = { values, set, bad: (id) => Boolean(errors?.fields?.includes(id)) };
+  const form = { values, set, bad: (/** @type {string} */ id) => Boolean(errors?.fields?.includes(id)) };
 
   return (
     <form className="plan-form" onSubmit={onSubmit} noValidate>

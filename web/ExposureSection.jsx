@@ -1,9 +1,14 @@
 import { useT } from './i18n.js';
 import { cssVars } from './lib.js';
 
+/** @type {import('./types.js').HazeView[]} */
+const HAZE_VIEWS = ['usual', 'plan'];
+
+/** @param {{exposure:import('./types.js').Exposure}} props */
 function Bars({ exposure: e }) {
   const t = useT();
   const max = Math.max(e.baseline, e.plan, e.whoGuideline) || 1;
+  /** @type {[string, number, string][]} */
   const rows = [
     [t('haze.usual'), e.baseline, 'base'],
     [t('haze.plan'), e.plan, 'plan'],
@@ -26,13 +31,16 @@ function Bars({ exposure: e }) {
   );
 }
 
-/** Switch the page haze between today's air and the air with the plan followed. */
+/**
+ * Switch the page haze between today's air and the air with the plan followed.
+ * @param {{hazeView:import('./types.js').HazeView, onHazeView:(view:import('./types.js').HazeView) => void}} props
+ */
 function HazeSwitch({ hazeView, onHazeView }) {
   const t = useT();
   return (
     <fieldset className="view">
       <legend>{t('haze.legend')}</legend>
-      {['usual', 'plan'].map((view) => (
+      {HAZE_VIEWS.map((view) => (
         <label className="view__opt" key={view}>
           <input
             type="radio"
@@ -48,7 +56,11 @@ function HazeSwitch({ hazeView, onHazeView }) {
   );
 }
 
-/** Exposure with and without the plan: the haze switch, the sentence, the bars and the assumptions. */
+/**
+ * Exposure with and without the plan: the haze switch, the sentence, the bars and the assumptions.
+ * @param {{result:import('./types.js').PlanResult, hazeView:import('./types.js').HazeView,
+ *   onHazeView:(view:import('./types.js').HazeView) => void}} props
+ */
 export default function ExposureSection({ result, hazeView, onHazeView }) {
   const t = useT();
   const { air, exposure: e } = result;

@@ -1,6 +1,16 @@
 import { HEALTH_IMPACT, HEALTH_IMPACT_HI, LEVELS } from './aqi.js';
 
-/** The facts handed to Gemini: numbers and ids only, never free text from the user. */
+/** @typedef {import('./types.js').Aqi} Aqi */
+/** @typedef {import('./types.js').Reading} Reading */
+/** @typedef {import('./types.js').AirSummary} AirSummary */
+/** @typedef {import('./types.js').AirDetail} AirDetail */
+
+/**
+ * The facts handed to Gemini: numbers and ids only, never free text from the user.
+ * @param {{cityName:string, profile:import('./types.js').PlanProfile, aqi:Aqi, pm25:number,
+ *   exposure:import('./types.js').Exposure, window:import('./types.js').ForecastWindow|null,
+ *   plan:import('./types.js').Plan, actions:import('./types.js').Action[]}} input
+ */
 export function briefingFacts({ cityName, profile, aqi, pm25, exposure, window, plan, actions }) {
   return {
     city: cityName,
@@ -35,9 +45,13 @@ export function briefingFacts({ cityName, profile, aqi, pm25, exposure, window, 
   };
 }
 
-/** The air block of a reply; `detail` adds the fields only the full plan needs. */
-export function airBlock({ aqi, data, lang, detail }) {
-  const block = {
+/**
+ * The air block every reply carries.
+ * @param {{aqi:Aqi, data:Reading}} input
+ * @returns {AirSummary}
+ */
+export function airSummary({ aqi, data }) {
+  return {
     aqi: aqi.value,
     category: aqi.category,
     levelIndex: aqi.levelIndex,
@@ -46,9 +60,16 @@ export function airBlock({ aqi, data, lang, detail }) {
     observedAt: data.time,
     source: data.source,
   };
-  if (!detail) return block;
+}
+
+/**
+ * The air block of a full plan: the summary plus the pollutant detail, health statement and a note.
+ * @param {{aqi:Aqi, data:Reading, lang:string}} input
+ * @returns {AirDetail}
+ */
+export function airDetail({ aqi, data, lang }) {
   return {
-    ...block,
+    ...airSummary({ aqi, data }),
     pm10: data.pm10 === null ? null : Math.round(data.pm10),
     healthImpact: (lang === 'hi' ? HEALTH_IMPACT_HI : HEALTH_IMPACT)[aqi.levelIndex],
     note: 'Modelled estimate using India CPCB AQI bands; may differ from nearby CPCB station readings.',

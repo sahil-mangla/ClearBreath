@@ -1,7 +1,11 @@
 import { useLang, useT } from './i18n.js';
 import { cssVars } from './lib.js';
 
-/** One list of recommended actions. `topIds` marks the briefing's top picks; `offset` staggers the entrance. */
+/**
+ * One list of recommended actions. `topIds` marks the briefing's top picks; `offset` staggers the entrance.
+ * @param {{title:string, items:import('./types.js').PlanAction[], topIds:string[], offset:number,
+ *   srcLang:string}} props
+ */
 export default function ActionGroup({ title, items, topIds, offset, srcLang }) {
   const t = useT();
   const lang = useLang();

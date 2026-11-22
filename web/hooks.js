@@ -16,7 +16,10 @@ export function usePrefersReducedMotion() {
   return reduced;
 }
 
-/** Smoothly tween a number toward `target` (jumps straight there under reduced motion). */
+/**
+ * Smoothly tween a number toward `target` (jumps straight there under reduced motion).
+ * @param {number} target @param {number} [ms]
+ */
 export function useTween(target, ms = 900) {
   const reduced = usePrefersReducedMotion();
   const [value, setValue] = useState(0);
@@ -30,6 +33,7 @@ export function useTween(target, ms = 900) {
     const from = current.current;
     const start = performance.now();
     let raf = 0;
+    /** @param {number} now */
     const tick = (now) => {
       const p = Math.min(1, (now - start) / ms);
       current.current = from + (target - from) * easeOutCubic(p);
@@ -42,10 +46,14 @@ export function useTween(target, ms = 900) {
   return value;
 }
 
-const airCache = new Map(); // city -> {at, data}
+/** @type {Map<string, {at:number, data:any}>} city -> reading */
+const airCache = new Map();
 const AIR_TTL_MS = 120_000;
 
-/** Live reading for a city: {status: 'loading'|'ok'|'error', data, error}. */
+/**
+ * Live reading for a city: {status: 'loading'|'ok'|'error', data, error}.
+ * @param {string} city
+ */
 export function useLiveAir(city) {
   const [state, setState] = useState(
     /** @type {import('./types.js').LiveAir} */ ({ status: 'loading', data: null, error: '' }),
@@ -65,7 +73,7 @@ export function useLiveAir(city) {
         airCache.set(city, { at: Date.now(), data });
         setState({ status: 'ok', data, error: '' });
       })
-      .catch((err) => {
+      .catch((/** @type {Error} */ err) => {
         if (err.name !== 'AbortError') setState({ status: 'error', data: null, error: err.message });
       });
     return () => controller.abort();

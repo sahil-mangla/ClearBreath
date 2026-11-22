@@ -192,7 +192,7 @@ test('POST /api/plan returns a full plan using the rules fallback when no key is
   assert.match(j.disclaimer, /not medical advice/);
 });
 
-test('POST /api/plan in Hindi without a key returns a genuinely Hindi briefing and health text, labelled hi', async () => {
+test('POST /api/plan in Hindi without a key returns a Hindi briefing and health text, labelled hi', async () => {
   const j = await (await postJson(app.base, '/api/plan', { city: 'delhi', lang: 'hi' })).json();
   assert.equal(j.briefing.source, 'rules');
   assert.equal(j.briefing.lang, 'hi');

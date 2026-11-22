@@ -2,6 +2,9 @@ import { COMMUTES, CONDITIONS, COOKING, HEATING, NOTES_MAX } from '../src/limits
 import { Check, NumField, PickField } from './FormFields.jsx';
 import { useT } from './i18n.js';
 
+/** @typedef {{form:import('./types.js').FormApi}} SectionProps */
+
+/** @param {SectionProps} props */
 export function HouseholdSection({ form }) {
   const t = useT();
   return (
@@ -16,9 +19,11 @@ export function HouseholdSection({ form }) {
   );
 }
 
+/** @param {SectionProps} props */
 export function HealthSection({ form }) {
   const t = useT();
   const { values, set } = form;
+  /** @param {string} id @param {boolean} on */
   const toggle = (id, on) =>
     set({ conditions: on ? [...values.conditions, id] : values.conditions.filter((c) => c !== id) });
   return (
@@ -41,6 +46,7 @@ export function HealthSection({ form }) {
   );
 }
 
+/** @param {SectionProps} props */
 export function CommuteSection({ form }) {
   const t = useT();
   return (
@@ -54,6 +60,7 @@ export function CommuteSection({ form }) {
   );
 }
 
+/** @param {SectionProps} props */
 export function HomeSection({ form }) {
   const t = useT();
   const { values, set } = form;
@@ -76,6 +83,7 @@ export function HomeSection({ form }) {
   );
 }
 
+/** @param {SectionProps} props */
 export function NotesField({ form }) {
   const t = useT();
   return (
@@ -99,6 +107,7 @@ export function NotesField({ form }) {
   );
 }
 
+/** @param {SectionProps} props */
 export function ManualReading({ form }) {
   const t = useT();
   return (

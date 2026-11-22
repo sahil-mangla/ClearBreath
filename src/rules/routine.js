@@ -2,10 +2,11 @@
 /** @typedef {import('./helpers.js').Action} Action */
 
 import { CONDITION_ADVICE, CONDITION_ORDER } from './constants.js';
-import { act, fmtHour, needsMask } from './helpers.js';
+import { act, fmtHour, needsMask, runBuilders } from './helpers.js';
 
 /** Daily-routine actions. Each builder takes the plan context and returns one action, or null if none applies. */
 
+/** @param {PlanContext} ctx */
 function windowAction({ pm25, forecast, polluted }) {
   if (!forecast || !polluted) return null;
   // Compared with the air right now, not the day's worst hour.
@@ -14,9 +15,13 @@ function windowAction({ pm25, forecast, polluted }) {
   return act(
     'r-window',
     1,
-    `Step out around ${fmtHour(forecast.bestHour)} (${forecast.bestDay})`,
-    `Forecast PM2.5 is lowest near ${fmtHour(forecast.bestHour)} (${forecast.bestPm25} µg/m³) and highest near ${fmtHour(forecast.worstHour)} (${forecast.worstPm25} µg/m³). Schedule school runs, errands and walks in the cleaner window, and keep early-morning and late-evening outings short.`,
-    `About ${gain}% less PM2.5 in the air you breathe during that outing (forecast model, approximate).`,
+    [
+      `Step out around ${fmtHour(forecast.bestHour)} (${forecast.bestDay})`,
+      `Forecast PM2.5 is lowest near ${fmtHour(forecast.bestHour)} (${forecast.bestPm25} µg/m³) and ` +
+        `highest near ${fmtHour(forecast.worstHour)} (${forecast.worstPm25} µg/m³). Schedule school runs, ` +
+        `errands and walks in the cleaner window, and keep early-morning and late-evening outings short.`,
+      `About ${gain}% less PM2.5 in the air you breathe during that outing (forecast model, approximate).`,
+    ],
     {
       bestHour: forecast.bestHour,
       worstHour: forecast.worstHour,
@@ -28,79 +33,86 @@ function windowAction({ pm25, forecast, polluted }) {
   );
 }
 
+/** @param {PlanContext} ctx */
 function enjoyAction({ polluted }) {
   if (polluted) return null;
-  return act(
-    'r-enjoy',
-    2,
+  return act('r-enjoy', 2, [
     'Good day to get outside',
     'Air quality is acceptable. Open windows to flush indoor air, and enjoy walks or outdoor play.',
     'Fresh-air ventilation now helps dilute indoor pollutants that build up during smoggier days.',
-  );
+  ]);
 }
 
+/** @param {PlanContext} ctx */
 function maskAction({ levelIndex, profile }) {
   if (!needsMask(levelIndex, profile)) return null;
   return act(
     'r-mask',
     1,
-    profile.hasN95 ? 'Wear your N95 outdoors, every time' : 'Get a fitted N95/FFP2 mask for outdoor trips',
-    profile.hasN95
-      ? 'Wear it snugly over nose and chin with no gaps. Replace it when it is damp, dirty or hard to breathe through. Cloth and surgical masks filter far less.'
-      : 'Choose an N95/FFP2 (without an exhalation-valve gap) and check the seal. Cloth and surgical masks filter far less. Kids need a small-size mask that fits.',
-    'Certified N95s capture at least 95% of fine particles in lab tests; with real-world fit expect roughly 80-90%.',
+    [
+      profile.hasN95 ? 'Wear your N95 outdoors, every time' : 'Get a fitted N95/FFP2 mask for outdoor trips',
+      profile.hasN95
+        ? 'Wear it snugly over nose and chin with no gaps. Replace it when it is damp, dirty or hard to breathe through. Cloth and surgical masks filter far less.'
+        : 'Choose an N95/FFP2 (without an exhalation-valve gap) and check the seal. Cloth and surgical masks filter far less. Kids need a small-size mask that fits.',
+      'Certified N95s capture at least 95% of fine particles in lab tests; with real-world fit expect roughly 80-90%.',
+    ],
     { hasN95: profile.hasN95 },
   );
 }
 
+/** @param {PlanContext} ctx */
 function conditionsAction({ profile, polluted }) {
   const conditions = CONDITION_ORDER.filter((c) => profile.conditions.includes(c));
   if (!polluted || conditions.length === 0) return null;
   return act(
     'r-conditions',
     1,
-    'Extra care for your health conditions',
-    `${conditions.map((c) => CONDITION_ADVICE[c]).join(' ')} Follow your own doctor's advice first.`,
-    'Fine-particle spikes are a known trigger for asthma and heart symptoms, so planning ahead lowers the chance of an emergency.',
+    [
+      'Extra care for your health conditions',
+      `${conditions.map((c) => CONDITION_ADVICE[c]).join(' ')} Follow your own doctor's advice first.`,
+      'Fine-particle spikes are a known trigger for asthma and heart symptoms, so planning ahead lowers the chance of an emergency.',
+    ],
     { conditions },
   );
 }
 
+/** @param {PlanContext} ctx */
 function exerciseAction({ profile, poor }) {
   if (!poor) return null;
   return act(
     'r-exercise',
     2,
-    profile.children > 0 ? "Move workouts and kids' play indoors" : 'Move workouts indoors',
-    'Do yoga, skipping, stretching or stair-climbing at home. Ask the school to shift PE and assembly indoors on Poor or worse days.',
-    'Hard exercise multiplies the air you breathe several times over resting, so an outdoor workout is a big extra dose of smog.',
+    [
+      profile.children > 0 ? "Move workouts and kids' play indoors" : 'Move workouts indoors',
+      'Do yoga, skipping, stretching or stair-climbing at home. Ask the school to shift PE and assembly indoors on Poor or worse days.',
+      'Hard exercise multiplies the air you breathe several times over resting, so an outdoor workout is a big extra dose of smog.',
+    ],
     { kids: profile.children > 0 },
   );
 }
 
+/** @param {PlanContext} ctx */
 function peakHoursAction({ smogSeason }) {
   if (!smogSeason) return null;
-  return act(
-    'r-peak',
-    3,
+  return act('r-peak', 3, [
     'Avoid the early-morning and late-evening smog trap',
     'In North Indian winters, cold still air and low inversion layers typically hold smoke near the ground around dawn, dusk and night. Postpone morning walks until the sun has warmed the air.',
     'Typically the lowest-pollution hours are mid-afternoon, when the air mixes upward (check the forecast above).',
-  );
+  ]);
 }
 
+/** @param {PlanContext} ctx */
 function grapAction({ city, poor }) {
   if (city.region !== 'ncr' || !poor) return null;
-  return act(
-    'r-grap',
-    3,
+  return act('r-grap', 3, [
     'Follow GRAP restrictions',
     'Delhi-NCR runs the Graded Response Action Plan (GRAP) in smog season, with curbs on construction, diesel vehicles and more. Check CAQM announcements and comply (for example, avoid non-essential diesel trips).',
     "Community-wide compliance is what brings the whole region's PM2.5 down, protecting everyone, not only you.",
-  );
+  ]);
 }
 
 /** [title, detail] for each commute mode. */
+/** @type {Record<string, string[]>} */
 const COMMUTE_TIPS = {
   car: [
     'Keep windows up and set AC to recirculate',
@@ -128,6 +140,7 @@ const COMMUTE_TIPS = {
   ],
 };
 
+/** @param {PlanContext} ctx */
 function commuteAction({ profile, polluted }) {
   if (!polluted && profile.commute !== 'wfh') return null;
   const [title, detail] = COMMUTE_TIPS[profile.commute];
@@ -135,7 +148,7 @@ function commuteAction({ profile, polluted }) {
     profile.commute === 'wfh'
       ? 'Skips roughly 1-3 hours of roadside air a day.'
       : 'Roadside air is usually the most polluted air of your day, so small commute changes pay back the most.';
-  return act('r-commute', 2, title, detail, impact, { mode: profile.commute });
+  return act('r-commute', 2, [title, detail, impact], { mode: profile.commute });
 }
 
 /** @type {Array<(ctx: PlanContext) => Action | null>} */
@@ -150,5 +163,8 @@ const BUILDERS = [
   commuteAction,
 ];
 
-/** @param {PlanContext} ctx */
-export const routineActions = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);
+/**
+ * @param {PlanContext} ctx
+ * @returns {Action[]}
+ */
+export const routineActions = (ctx) => runBuilders(BUILDERS, ctx);

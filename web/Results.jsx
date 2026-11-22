@@ -9,6 +9,7 @@ import { cityLabel } from './strings.js';
 /** @typedef {import('./types.js').PlanResult} PlanResult */
 /** @typedef {import('./types.js').HazeView} HazeView */
 
+/** @param {{alerts:PlanResult['plan']['alerts'], srcLang:string}} props */
 function Alerts({ alerts, srcLang }) {
   const t = useT();
   return alerts.map((a) => (
@@ -19,9 +20,13 @@ function Alerts({ alerts, srcLang }) {
   ));
 }
 
-/** The three action lists, numbered on from one another so the entrance animation flows down the page. */
+/**
+ * The three action lists, numbered on from one another so the entrance animation flows down the page.
+ * @param {{plan:PlanResult['plan'], topIds:string[], srcLang:string}} props
+ */
 function ActionGroups({ plan, topIds, srcLang }) {
   const t = useT();
+  /** @type {[string, PlanResult['plan']['routine']][]} */
   const groups = [
     ['group.routine', plan.routine],
     ['group.indoor', plan.indoor],

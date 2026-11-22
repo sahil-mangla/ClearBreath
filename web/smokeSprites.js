@@ -2,10 +2,16 @@ import { hash, withAlpha } from './lib.js';
 
 const SPRITE = 192;
 
-/** Read a CSS custom property from the document root. */
+/**
+ * Read a CSS custom property from the document root.
+ * @param {string} name
+ */
 export const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-/** A soft, lumpy cloud sprite in one colour: many overlapping gradients, edges faded to nothing. */
+/**
+ * A soft, lumpy cloud sprite in one colour: many overlapping gradients, edges faded to nothing.
+ * @param {string} color @param {number} seed
+ */
 export function buildSprite(color, seed) {
   const c = document.createElement('canvas');
   c.width = SPRITE;

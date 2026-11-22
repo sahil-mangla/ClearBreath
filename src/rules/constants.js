@@ -4,6 +4,7 @@
  */
 
 /** kg CO2 per passenger-km (typical published averages; real values vary). */
+/** @type {Readonly<Record<string, number>>} */
 export const EMISSION_FACTORS = Object.freeze({
   car: 0.17,
   auto_cab: 0.12,
@@ -16,6 +17,7 @@ export const WORK_DAYS_PER_WEEK = 5;
 export const WORK_WEEKS_PER_YEAR = 48;
 
 /** Door-to-door average speed in km/h used to estimate time spent commuting. */
+/** @type {Record<string, number>} km per hour, by commute mode */
 export const COMMUTE_SPEED = { car: 20, auto_cab: 20, two_wheeler: 22, bus_metro: 18, walk_cycle: 8 };
 
 /** Share of outdoor PM2.5 actually breathed in inside a closed AC cabin. */
@@ -36,6 +38,7 @@ export const PM25_GUIDELINES = { whoPm25_24h: WHO_PM25_24H, indiaPm25_24h: INDIA
 export const CLOSED_CABIN = new Set(['car']);
 
 /** Per-condition guidance, kept conservative: it supports a doctor's plan and never replaces one. */
+/** @type {Readonly<Record<string, string>>} */
 export const CONDITION_ADVICE = Object.freeze({
   asthma:
     "Asthma: keep your reliever inhaler on you and follow your doctor's asthma action plan. Do not skip your regular medicines on smoggy days.",

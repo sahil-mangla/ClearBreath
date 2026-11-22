@@ -8,9 +8,10 @@
     "noEmit": true,
     "strict": false,
     "strictNullChecks": true,
+    "noImplicitAny": true,
     "skipLibCheck": true,
     "types": ["node"],
     "jsx": "react-jsx"
   },
-  "include": ["src", "web", "server.js", "api"]
+  "include": ["src", "web", "server.js", "api", "scripts"]
 }

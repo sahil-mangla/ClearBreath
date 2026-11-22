@@ -9,7 +9,7 @@ Winter smog guidance for Indian cities, in English and Hindi, with the impact of
 [![Deploy](https://img.shields.io/badge/CD-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/sahil-mangla/ClearBreath)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022-5fa04e?logo=nodedotjs&logoColor=white)
 ![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-156%20unit%20%2B%2017%20browser-brightgreen)
+![Tests](https://img.shields.io/badge/tests-157%20unit%20%2B%2018%20browser-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.2%20AA%20target-blue)
 ![CSP](https://img.shields.io/badge/CSP-default--src%20none-blue)
 ![Gemini](https://img.shields.io/badge/GenAI-Gemini%20with%20rules%20fallback-8e75ff)
@@ -48,7 +48,7 @@ Each criterion below names the evidence to check, so every claim can be verified
 | **Code quality** | `src/` (backend), `web/` (front end), `src/determinism.js` | Small single-purpose modules; pure functions for rules, AQI maths, validators and the Hindi catalogue; one definition of shared facts; zero runtime dependencies |
 | **Security** | `src/validate.js`, `src/app.js`, `src/llm.js`, `src/ratelimit.js` | Fixed city allow-list (no SSRF), strict validation, 8 KB body cap, strict CSP, server-only key, prompt-injection containment, per-IP and global limits |
 | **Efficiency** | `src/airdata.js`, `src/llm.js`, `src/app.js` | One upstream call per city per 10 minutes, hash-keyed Gemini caches, gzip and ETag, off-screen canvases pause, parallel translation |
-| **Testing** | `test/`, `scripts/browser-smoke.mjs`, `.github/workflows/ci.yml` | 153 backend, front-end and deploy tests, 17 real-Chrome checks, all run in CI and again before every deploy |
+| **Testing** | `test/`, `scripts/browser-smoke.mjs`, `.github/workflows/ci.yml` | 157 backend, front-end and deploy tests, 18 real-Chrome checks, all run in CI and again before every deploy |
 | **Accessibility** | `web/PlanForm.jsx`, `web/SmogText.jsx`, `test/web/components.test.js` | Labels and fieldsets, `aria-invalid` with inline messages, focus management, pausable motion, measured contrast, `lang` handling |
 
 To verify everything yourself:
@@ -68,8 +68,8 @@ npm start                # http://127.0.0.1:3000
 
 ```bash
 npm ci                   # development only (React, esbuild, fonts)
-npm test                 # 153 tests: backend, front-end components, deploy config. No network.
-npm run test:browser     # 17 checks in real headless Chrome (skips if Chrome is absent)
+npm test                 # 157 tests: backend, front-end components, deploy config. No network.
+npm run test:browser     # 18 checks in real headless Chrome (skips if Chrome is absent)
 npm run build            # rebuild public/app.js after editing web/
 ```
 
@@ -110,21 +110,22 @@ flowchart LR
 | `api/index.js` | Vercel entry point: the same handler, API only |
 | `vercel.json` | Vercel build, routing and header configuration |
 | `src/app.js` | Routing and rate limiting only |
-| `src/http.js`, `src/static.js`, `src/handlers.js` | HTTP helpers and security headers; static serving (ETag, gzip); the plan, air and ask endpoints |
+| `src/http.js`, `src/static.js`, `src/handlers.js`, `src/handlers/` | HTTP helpers and security headers; static serving (ETag, gzip); the plan, air and ask endpoints, one file per job |
 | `src/validate.js`, `src/limits.js` | Allow-list validation and sanitisation of every input; the allowed values and ranges, shared with the form |
 | `src/cities.js` | The fixed list of 22 supported cities |
 | `src/airdata.js` | Open-Meteo client: timeout, 10-minute cache, in-flight de-duplication, stale-while-error, cleanest-hour finder |
 | `src/aqi.js` | India CPCB AQI sub-index and bands from PM2.5 and PM10 |
 | `src/rules.js`, `src/rules/` | Recommendation engine: one small file per concern (routine, indoor, alternatives, alerts, exposure, briefing) |
-| `src/llm.js`, `src/llm/` | Gemini client: schema-constrained output, temperature 0, fixed seed, hash-keyed caches, call budget; prompts, budget, cache and transport in `src/llm/` |
+| `src/llm.js`, `src/llm/` | Gemini client: schema-constrained output, temperature 0, fixed seed, hash-keyed caches, call budget; prompts, budget, cache, transport, runner and tasks in `src/llm/` |
 | `src/determinism.js` | Number-grounding and translation validators |
+| `src/types.js`, `src/replies.js` | The server's JSDoc types (the page's `PlanResult` is one of them); the reply blocks sent to the page and Gemini |
 | `src/hi.js`, `src/translate.js` | Built-in Hindi catalogue; chunked Gemini translation with per-chunk fallback |
 | `web/` | React front end source: form, results, readout, ask panel, smoke and skyline canvases |
 | `public/` | Built bundle, stylesheets, self-hosted fonts, HTML shell |
-| `scripts/` | esbuild build script and the real-Chrome smoke test |
+| `scripts/` | esbuild build script, the structure check, and the real-Chrome smoke test (`scripts/smoke/`) |
 | `test/backend/`, `test/web/` | Backend, rules (with a golden test), component and deploy tests |
 
-The backend is `server.js` and `src/`; the front end is `web/` built into `public/`. The front end imports three backend modules, `src/aqi.js` for the CPCB bands, `src/constants.js` for the language list and `src/limits.js` for the form's allowed values, so both sides share one definition.
+The backend is `server.js` and `src/`; the front end is `web/` built into `public/`. The front end imports three backend modules, `src/aqi.js` for the CPCB bands, `src/languages.js` for the language list and `src/limits.js` for the form's allowed values, so both sides share one definition.
 
 ## CI/CD and deployment
 
@@ -134,11 +135,11 @@ flowchart LR
   P --> CD
   subgraph CI [GitHub Actions]
     direction LR
-    c1[npm ci] --> c1b[lint, types,<br/>format] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[153 tests] --> c5[17 real-Chrome<br/>checks]
+    c1[npm ci] --> c1b[lint, types,<br/>format] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[157 tests] --> c5[18 real-Chrome<br/>checks]
   end
   subgraph CD [Vercel]
     direction LR
-    d1[npm ci] --> d2[build] --> d3[153 tests<br/>gate the deploy] --> d4[CDN: public/<br/>Function: /api, bom1]
+    d1[npm ci] --> d2[build] --> d3[157 tests<br/>gate the deploy] --> d4[CDN: public/<br/>Function: /api, bom1]
   end
 ```
 
@@ -160,7 +161,7 @@ Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.m
 
 - One job per module. The server is `http.js` (headers, errors, body parsing), `static.js` (assets, caching), `handlers.js` (the three endpoints) and `app.js` (routing only). The rules engine is one small file per concern under `src/rules/` (routine, indoor, alternatives, alerts, exposure, briefing), each action a short function.
 - Pure functions for the rules, the AQI maths, the validators and the Hindi catalogue, so the logic is testable without a server or a network.
-- Enforced in CI: `oxlint --deny-warnings`, `tsc` over the JSDoc types of the server and the front end, a structure check (200 lines per file, 120 columns), Prettier, then the tests. `npm run check` runs all of them locally.
+- Enforced in CI: `oxlint --deny-warnings`, `tsc` over the JSDoc types of the server, the front end and the scripts (`noImplicitAny` on), function-level lint limits (complexity, length, parameters, nesting), a structure check (200 lines per file, 120 columns), Prettier, then the tests. `npm run check` runs all of them locally.
 - One definition of shared facts (AQI bands, language list, mask rule) rather than a copy on each side.
 - Zero runtime dependencies on the server. The front end is bundled once and committed.
 - English and Hindi plan text are kept in step by a test that checks identical keys and placeholders.
@@ -188,13 +189,13 @@ Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.m
 
 ### Testing
 
-153 tests with `node --test`, no network required, covering three layers:
+157 tests with `node --test`, no network required, covering three layers:
 
 - **Backend.** CPCB breakpoints and band edges; validation and injection strings; prototype-key and oversize inputs; the rules engine per scenario; the exposure model (clean days, open versus closed cabins); the air client (cache, de-duplication, timeouts, stale-while-error); the Gemini client (key placement, retry, budget, id filtering, clamping, rejection of ungrounded figures and links); determinism (identical requests give identical output, the Hindi catalogue is exhaustive over every action, translation validators reject wrong counts, missing Devanagari, markup and changed figures); and HTTP integration (security headers, path traversal, fonts, `/api/air`, and the 400, 405, 413, 415, 429, 502 and 503 paths, with and without Gemini).
 - **Front end.** The real React components are bundled with esbuild and rendered to HTML inside the test run, with no browser and no extra dependency. Tests check that every control has a bound label, fieldsets have legends, server field errors set `aria-invalid` with an inline message and a focusable summary, Hindi renders the same controls, the busy button stays focusable, and the animated headline is read once as plain text. Pure helpers (haze density, text timing, skyline, share text, low-power detection) and the English/Hindi string tables are tested too.
 - **Deployment.** `vercel.json` is checked (output folder, rewrites, build command, immutable font caching), the CDN's security headers must equal the server's, and the Vercel function is driven over a real socket (health, cities, 404, 405, 415, and rate limiting keyed on `X-Forwarded-For`).
 
-`npm run test:browser` adds 17 checks in real headless Chrome with a mocked air reading: canvases mount and move, no CSP violation fires, the severe-air strip, themed dropdowns, the Hindi toggle with no stray English, the haze switch visibly changing the smoke, the print layout, low-power and reduced-motion modes, and no sideways scroll at phone width.
+`npm run test:browser` adds 18 checks in real headless Chrome with a mocked air reading: canvases mount and move, no CSP violation fires, the severe-air strip, themed dropdowns, the Hindi toggle with no stray English, the haze switch visibly changing the smoke, the print layout, low-power and reduced-motion modes, and no sideways scroll at phone width.
 
 ### Accessibility
 

@@ -4,7 +4,10 @@ export const COOKING = ['lpg', 'png', 'induction', 'biomass'];
 export const HEATING = ['none', 'electric', 'wood_coal'];
 export const CONDITIONS = ['asthma', 'heart', 'pregnancy'];
 
-/** [min, max] for each numeric field. */
+/**
+ * [min, max] for each numeric field.
+ * @type {Readonly<Record<string, readonly [number, number]>>}
+ */
 export const LIMITS = {
   adults: [1, 10],
   children: [0, 10],
@@ -14,6 +17,8 @@ export const LIMITS = {
 };
 
 export const NOTES_MAX = 200;
+/** The shortest question the assistant will take (characters, after trimming). */
+export const QUESTION_MIN = 3;
 export const QUESTION_MAX = 300;
 
 /** What the form starts with and what the server assumes when a field is left out. */

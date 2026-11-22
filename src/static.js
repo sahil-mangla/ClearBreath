@@ -23,7 +23,10 @@ const STATIC_FILES = {
   ],
 };
 
-/** Read every static file once at start-up: bytes, ETag and (except fonts, already compressed) a gzip copy. */
+/**
+ * Read every static file once at start-up: bytes, ETag and (except fonts, already compressed) a gzip copy.
+ * @param {string} dir the folder the files are read from
+ */
 export function loadStatic(dir) {
   const files = new Map();
   for (const [route, [file, type]] of Object.entries(STATIC_FILES)) {
@@ -34,8 +37,8 @@ export function loadStatic(dir) {
   return files;
 }
 
-/** Serve one loaded file. Pages, script and styles revalidate with an ETag (an unchanged file costs a 304). */
 /**
+ * Serve one loaded file. Pages, script and styles revalidate with an ETag (an unchanged file costs a 304).
  * @param {{type:string, raw:Buffer, etag:string, gzip:Buffer|null}} file one entry from loadStatic()
  * @param {import('node:http').IncomingMessage} req
  * @param {import('node:http').ServerResponse} res

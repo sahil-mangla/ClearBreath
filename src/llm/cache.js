@@ -4,13 +4,17 @@
  * @param {{ttlMs:number, max:number, now:() => number}} options
  */
 export function createCache({ ttlMs, max, now }) {
-  const entries = new Map();
+  const entries = /** @type {Map<string, {at:number, value:any}>} */ (new Map());
   return {
+    /** @param {string} key @param {any} value */
     remember(key, value) {
       if (entries.size >= max) entries.delete(entries.keys().next().value);
       entries.set(key, { at: now(), value });
     },
-    /** @returns the stored value, or undefined when absent or expired */
+    /**
+     * @param {string} key
+     * @returns the stored value, or undefined when absent or expired
+     */
     recall(key) {
       const hit = entries.get(key);
       if (!hit) return undefined;

@@ -4,9 +4,13 @@
 /** @param {Record<string, string|number>} vars @returns {import('react').CSSProperties} */
 export const cssVars = (vars) => vars;
 
+/** @param {number} v @param {number} lo @param {number} hi */
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-/** Deterministic 0..1 hash (mulberry32 step). Same input, same output: no flicker between renders. */
+/**
+ * Deterministic 0..1 hash (mulberry32 step). Same input, same output: no flicker between renders.
+ * @param {number} n
+ */
 export function hash(n) {
   let t = (n + 0x6d2b79f5) | 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
@@ -14,30 +18,44 @@ export function hash(n) {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
-/** Stable integer seed from a string (city key etc). */
+/**
+ * Stable integer seed from a string (city key etc).
+ * @param {unknown} str
+ */
 export function seedFor(str) {
   let h = 2166136261;
   for (const ch of String(str ?? '')) h = Math.imul(h ^ (ch.codePointAt(0) ?? 0), 16777619);
   return h >>> 0;
 }
 
-/** How thick the haze is drawn for an AQI value (0-500). Never fully clear, never fully opaque. */
+/**
+ * How thick the haze is drawn for an AQI value (0-500). Never fully clear, never fully opaque.
+ * @param {unknown} aqi
+ */
 export function densityFor(aqi) {
   const v = clamp(Number(aqi) || 0, 0, 500);
   return clamp(0.08 + 0.92 * (v / 400) ** 0.85, 0.08, 1);
 }
 
-/** Haze density after following the plan: thinned by the estimated exposure reduction (capped at 90%). */
+/**
+ * Haze density after following the plan: thinned by the estimated exposure reduction (capped at 90%).
+ * @param {number} density @param {unknown} reductionPct
+ */
 export function clearedDensity(density, reductionPct) {
   return clamp(density * (1 - clamp(Number(reductionPct) || 0, 0, 90) / 100), 0.05, 1);
 }
 
-/** Split text into words of grapheme clusters (keeps Devanagari conjuncts whole). */
+/**
+ * Split text into words of grapheme clusters (keeps Devanagari conjuncts whole).
+ * @param {unknown} text
+ * @returns {string[][]}
+ */
 export function splitWords(text) {
   const seg =
     typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
       ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
       : null;
+  /** @param {string} s */
   const graphemes = (s) => (seg ? Array.from(seg.segment(s), (x) => x.segment) : Array.from(s));
   return String(text ?? '')
     .split(/\s+/)
@@ -49,6 +67,7 @@ export function splitWords(text) {
  * Per-letter timing for the "resolving out of smog" text. Thicker air starts blurrier.
  * @param {number} i      letter index across the whole string
  * @param {number} density 0..1
+ * @param {number} [salt]
  */
 export function letterTiming(i, density, salt = 1) {
   const r = hash(i * 97 + salt * 131);
@@ -80,10 +99,12 @@ export const SMOKE_LAYERS = Object.freeze([
 
 /** @returns {Puff[]} */
 export function makePuffs(seed = 7) {
+  /** @type {Puff[]} */
   const puffs = [];
   let i = 0;
   SMOKE_LAYERS.forEach((L, layer) => {
     for (let k = 0; k < L.count; k += 1, i += 1) {
+      /** @param {number} n */
       const r = (n) => hash(i * 31 + seed * 7 + n);
       puffs.push({
         layer,
@@ -109,6 +130,7 @@ export function makePuffs(seed = 7) {
  * once fully off-screen, and a spring-back offset that lets the pointer part the cloud.
  * @param {Puff} p puff (mutated)
  * @param {number} t seconds since start
+ * @param {number} dt seconds since the last step
  * @param {{x:number,y:number}|null} pointer normalised
  */
 export function stepPuff(p, t, dt, pointer) {
@@ -139,14 +161,20 @@ export function stepPuff(p, t, dt, pointer) {
  * Pixel city window lights (the skyline itself is in skyline.js).     *
  * ------------------------------------------------------------------ */
 
-/** Whether the window at (x, y) of a building is lit; `tick` flips a few of them over time. */
+/**
+ * Whether the window at (x, y) of a building is lit; `tick` flips a few of them over time.
+ * @param {number} seed @param {number} x @param {number} y @param {number} [tick]
+ */
 export function windowLit(seed, x, y, tick = 0) {
   const base = hash(seed + x * 7 + y * 13);
   const flicker = hash(seed + x * 3 + y * 5 + 99) < 0.12 ? hash(seed + x + y + tick * 31) : 0.5;
   return base < 0.3 && flicker > 0.18;
 }
 
-/** Append an alpha channel to an `oklch(...)`/`rgb(...)` token string for canvas gradients. */
+/**
+ * Append an alpha channel to an `oklch(...)`/`rgb(...)` token string for canvas gradients.
+ * @param {string} color @param {number} alpha
+ */
 export function withAlpha(color, alpha) {
   const a = clamp(alpha, 0, 1).toFixed(3);
   return String(color)
@@ -154,5 +182,5 @@ export function withAlpha(color, alpha) {
     .replace(/\)\s*$/, ` / ${a})`);
 }
 
-/** Ease-out for number tweens. */
+/** Ease-out for number tweens. @param {number} p */
 export const easeOutCubic = (p) => 1 - (1 - clamp(p, 0, 1)) ** 3;

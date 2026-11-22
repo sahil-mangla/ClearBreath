@@ -9,10 +9,15 @@
 
 const CHUNK_CHARS = 1800;
 
-/** Split into runs of consecutive strings of at most ~maxChars each (a single long string stays whole). */
+/**
+ * Split into runs of consecutive strings of at most ~maxChars each (a single long string stays whole).
+ * @param {string[]} texts
+ * @param {number} [maxChars]
+ * @returns {number[][]} arrays of indexes into `texts`
+ */
 export function chunkTexts(texts, maxChars = CHUNK_CHARS) {
-  const chunks = [];
-  let current = [];
+  const chunks = /** @type {number[][]} */ ([]);
+  let current = /** @type {number[]} */ ([]);
   let size = 0;
   texts.forEach((t, i) => {
     if (current.length && size + t.length > maxChars) {
@@ -24,7 +29,7 @@ export function chunkTexts(texts, maxChars = CHUNK_CHARS) {
     size += t.length;
   });
   if (current.length) chunks.push(current);
-  return chunks; // arrays of indexes
+  return chunks;
 }
 
 /**
@@ -39,6 +44,7 @@ export async function translateTexts(llm, texts, builtin) {
     ? await Promise.all(chunks.map((idx) => llm.translate(idx.map((i) => texts[i])).catch(() => null)))
     : chunks.map(() => null);
 
+  /** @type {string[]} */
   const out = new Array(texts.length);
   let gemini = 0;
   for (let c = 0; c < chunks.length; c += 1) {

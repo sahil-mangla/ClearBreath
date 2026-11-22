@@ -1,65 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { getCities } from './api.js';
-import AskPanel from './AskPanel.jsx';
+import { useState } from 'react';
 import { usePrefersReducedMotion, useLiveAir, useLowPower } from './hooks.js';
+import { hazeDensity, useCities, useFormValues, useResultsFocus } from './appHooks.js';
 import { LangContext, useTranslator } from './i18n.js';
-import { clearedDensity, densityFor } from './lib.js';
-import PixelCity from './PixelCity.jsx';
-import PlanForm from './PlanForm.jsx';
-import Readout, { BandScale } from './Readout.jsx';
-import Results from './Results.jsx';
-import RightNow from './RightNow.jsx';
+import { HeroSection, PlanSection, ResultsSection, ScaleSection } from './sections.jsx';
 import Smoke from './Smoke.jsx';
-import SmogText from './SmogText.jsx';
 import TopBar from './TopBar.jsx';
-import { DEFAULTS, saveLang, storedLang } from './settings.js';
+import { saveLang } from './settings.js';
 import { cityLabel } from './strings.js';
 import { usePlanRequest } from './usePlanRequest.js';
 
-const FALLBACK_CITIES = [{ key: 'delhi', name: 'Delhi', state: 'Delhi' }];
-const NO_READING_DENSITY = 0.55; // until the first live reading arrives
+/** @typedef {import('./types.js').PlanResult} PlanResult */
+/** @typedef {import('./types.js').HazeView} HazeView */
 
-export default function App() {
+/** Everything the page needs: the request, the live reading, the form, the haze and the handlers. */
+function useAppState() {
   const reduced = usePrefersReducedMotion();
   const lowPower = useLowPower();
   const [paused, setPaused] = useState(false);
-  const [cities, setCities] = useState(FALLBACK_CITIES);
-  const [values, setValues] = useState(() => ({ ...DEFAULTS, lang: storedLang() }));
-  const { busy, errors, result, status, hazeView, setHazeView, shouldFocus, build, reset } = usePlanRequest();
-  const resultsRef = useRef(/** @type {HTMLHeadingElement|null} */ (null));
+  const cities = useCities();
+  const { values, set, setValues } = useFormValues();
+  const request = usePlanRequest();
+  const { result, hazeView, shouldFocus, build, reset } = request;
+  const headingRef = useResultsFocus(result, shouldFocus, reduced);
   const air = useLiveAir(values.city);
+  const { base, shown: density } = hazeDensity(result, air.data?.air.aqi, hazeView);
   const lang = values.lang;
-  const t = useTranslator(lang); // App renders the provider, so it cannot read the language from context
 
-  useEffect(() => {
-    getCities()
-      .then((d) => d.cities?.length && setCities(d.cities))
-      .catch(() => {}); // the single-city fallback keeps the page usable
-  }, []);
-
-  // Keep the document language honest for screen readers and the browser's font choice.
-  useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
-
-  const set = useCallback((patch) => setValues((v) => ({ ...v, ...patch })), []);
-
+  /** @param {string} city */
   const changeCity = (city) => {
     set({ city });
     reset();
   };
 
-  const cityName = cityLabel(
-    cities.find((c) => c.key === values.city),
-    lang,
-  );
-
-  const submit = (e) => {
-    e.preventDefault();
-    build(values);
-  };
-
   // Switching language rebuilds an existing plan so its briefing is written in the new language too.
+  /** @param {string} next */
   const changeLang = (next) => {
     if (next === lang) return;
     saveLang(next);
@@ -69,18 +43,81 @@ export default function App() {
     if (result) build(nextValues, { focus: false });
   };
 
-  // Bring a fresh plan into view and move focus to its heading.
-  useEffect(() => {
-    const el = resultsRef.current;
-    if (!result || !el || !shouldFocus()) return;
-    el.focus({ preventScroll: true });
-    el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  }, [result, reduced, shouldFocus]);
+  /** @param {import('react').FormEvent} e */
+  const submit = (e) => {
+    e.preventDefault();
+    build(values);
+  };
 
-  const liveAqi = result ? result.air.aqi : air.data?.air.aqi;
-  const base = Number.isFinite(liveAqi) ? densityFor(liveAqi) : NO_READING_DENSITY;
-  const density = result && hazeView === 'plan' ? clearedDensity(base, result.exposure.reductionPct) : base;
+  return {
+    ...request,
+    reduced,
+    lowPower,
+    paused,
+    togglePause: () => setPaused((p) => !p),
+    cities,
+    values,
+    set,
+    lang,
+    air,
+    base,
+    density,
+    headingRef,
+    changeCity,
+    changeLang,
+    submit,
+  };
+}
 
+/** @param {{app: ReturnType<typeof useAppState>}} props */
+function Main({ app }) {
+  const { values, lang, cities, lowPower, paused, density, base } = app;
+  const cityName = cityLabel(
+    cities.find((c) => c.key === values.city),
+    lang,
+  );
+  return (
+    <main id="main">
+      <div className="page">
+        <HeroSection
+          density={density}
+          cities={cities}
+          city={values.city}
+          onCity={app.changeCity}
+          air={app.air}
+        />
+        <ScaleSection air={app.air} />
+        <PlanSection
+          city={values.city}
+          cityName={cityName}
+          density={base}
+          lowPower={lowPower}
+          paused={paused}
+          form={{ values, set: app.set, onSubmit: app.submit, busy: app.busy, errors: app.errors }}
+        />
+        <ResultsSection
+          result={app.result}
+          city={values.city}
+          lowPower={lowPower}
+          paused={paused}
+          density={density}
+          baseDensity={base}
+          hazeView={app.hazeView}
+          onHazeView={app.setHazeView}
+          headingRef={app.headingRef}
+        />
+      </div>
+      <p className="visually-hidden" role="status">
+        {app.status}
+      </p>
+    </main>
+  );
+}
+
+export default function App() {
+  const app = useAppState();
+  const { lang, lowPower, paused, density } = app;
+  const t = useTranslator(lang); // App renders the provider, so it cannot read the language from context
   return (
     <LangContext.Provider value={lang}>
       <Smoke density={density} paused={paused} lite={lowPower} />
@@ -88,96 +125,16 @@ export default function App() {
         <a className="skip" href="#main">
           {t('skip')}
         </a>
-
         <TopBar
           lowPower={lowPower}
           density={density}
           paused={paused}
-          reduced={reduced}
+          reduced={app.reduced}
           lang={lang}
-          onLang={changeLang}
-          onTogglePause={() => setPaused((p) => !p)}
+          onLang={app.changeLang}
+          onTogglePause={app.togglePause}
         />
-
-        <main id="main">
-          <div className="page">
-            <section className="hero" aria-labelledby="hero-title">
-              <div className="hero__copy">
-                <h1 id="hero-title" className="hero__title">
-                  <SmogText key={lang} text={t('hero.title')} density={density} />
-                </h1>
-                <p className="hero__lead">{t('hero.lead')}</p>
-                <a className="btn btn--primary" href="#plan">
-                  {t('hero.cta')}
-                </a>
-              </div>
-              <div className="hero__side">
-                <Readout cities={cities} city={values.city} onCity={changeCity} air={air} />
-                <RightNow aqi={air.data?.air.aqi} levelIndex={air.data?.air.levelIndex} />
-              </div>
-            </section>
-
-            <section className="band" aria-labelledby="scale-title">
-              <h2 id="scale-title" className="band__title">
-                {t('scale.title')}
-              </h2>
-              <p className="band__lead">{t('scale.lead')}</p>
-              <BandScale aqi={air.data?.air.aqi} levelIndex={air.data?.air.levelIndex} />
-            </section>
-
-            <section id="plan" className="toolset" aria-labelledby="plan-title">
-              <div className="toolset__sky" aria-hidden="true">
-                <PixelCity city={values.city} density={base} still={lowPower || paused} />
-                {lowPower ? null : (
-                  <Smoke
-                    variant="band"
-                    className="toolset__smoke"
-                    density={base}
-                    boost={0.1}
-                    paused={paused}
-                  />
-                )}
-              </div>
-              <div className="panel plan">
-                <h2 id="plan-title">{t('plan.title')}</h2>
-                <PlanForm
-                  values={values}
-                  set={set}
-                  onSubmit={submit}
-                  busy={busy}
-                  errors={errors}
-                  cityName={cityName}
-                />
-              </div>
-            </section>
-
-            {result ? (
-              <section className="panel panel--results" aria-label={t('results.aria')}>
-                {/* Squared so a modelled cut reads clearly in this small strip (page haze: plain scale). */}
-                {lowPower ? null : (
-                  <Smoke variant="band" className="results__smoke" density={density ** 2} paused={paused} />
-                )}
-                <Results
-                  ref={resultsRef}
-                  result={result}
-                  hazeView={hazeView}
-                  onHazeView={setHazeView}
-                  density={base}
-                />
-              </section>
-            ) : null}
-
-            {result ? (
-              <div className="panel">
-                <AskPanel city={values.city} lang={lang} />
-              </div>
-            ) : null}
-          </div>
-          <p className="visually-hidden" role="status">
-            {status}
-          </p>
-        </main>
-
+        <Main app={app} />
         <footer className="foot">
           {lowPower ? null : (
             <Smoke variant="band" className="foot__smoke" density={density} boost={0.3} paused={paused} />

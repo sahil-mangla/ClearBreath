@@ -7,10 +7,16 @@ import { cityLabel, translate } from './strings.js';
 /** @typedef {import('./types.js').HazeView} HazeView */
 /** @typedef {import('./types.js').ApiError} ApiError */
 
+/** @typedef {import('./types.js').FormValues} FormValues */
+
+/** @param {string} v */
 const num = (v) => (String(v).trim() === '' ? undefined : Number(v));
 
-/** The form's string values as the typed request the API expects. */
-export function toRequest(v) {
+/**
+ * The form's string values as the typed request the API expects.
+ * @param {FormValues} v
+ */
+function toRequest(v) {
   return {
     city: v.city,
     adults: num(v.adults),
@@ -41,10 +47,11 @@ export function usePlanRequest() {
   const [hazeView, setHazeView] = useState(/** @type {HazeView} */ ('plan'));
   const [status, setStatus] = useState('');
   const running = useRef(false);
-  const queued = useRef(/** @type {{values:any, focus:boolean}|null} */ (null));
+  const queued = useRef(/** @type {{values:FormValues, focus:boolean}|null} */ (null));
   const moveFocus = useRef(false);
   const shouldFocus = useCallback(() => moveFocus.current, []);
 
+  /** @param {FormValues} values @param {{focus?:boolean}} [options] */
   const build = async (values, { focus = true } = {}) => {
     if (running.current) {
       queued.current = { values, focus };

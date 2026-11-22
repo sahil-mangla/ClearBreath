@@ -1,171 +1,35 @@
 import { CITIES, isCity } from './cities.js';
-import { computeAqi } from './aqi.js';
-import { bestWindow } from './airdata.js';
-import { HttpError, readJson } from './http.js';
-import { applyTexts, builtinTexts, collectTexts, publicText } from './hi.js';
-import { airBlock, briefingFacts } from './replies.js';
-import { buildPlan, estimateExposure, fallbackBriefing, topActions, PM25_GUIDELINES } from './rules.js';
-import { translateTexts } from './translate.js';
-import { validateAskInput, validatePlanInput } from './validate.js';
+import { HttpError } from './http.js';
+import { airSummary } from './replies.js';
+import { createAskHandler } from './handlers/ask.js';
+import { createPlanHandler } from './handlers/plan.js';
+import { aqiOrFail, createReadings } from './handlers/reading.js';
 
-const DISCLAIMER = 'General guidance, not medical advice. Impact figures are approximate estimates.';
-
-const badInput = ({ errors, fields }) =>
-  new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: errors, fields });
-
-/** The three endpoints that do real work. Dependencies are passed in so tests can fake them. */
+/**
+ * The three endpoints that do real work. Dependencies are passed in so tests can fake them.
+ * @param {{air:import('./types.js').AirClient, llm:import('./types.js').Llm, now:() => Date}} deps
+ */
 export function createHandlers({ air, llm, now }) {
-  async function airFor(cityKey, manualPm25) {
-    if (manualPm25 !== null && manualPm25 !== undefined) {
-      return { pm25: manualPm25, pm10: null, time: null, hourly: [], source: 'Entered by you' };
-    }
-    try {
-      return await air.get(cityKey);
-    } catch (err) {
-      console.error(`[air] upstream failure: ${err?.message}`);
-      throw new HttpError(
-        502,
-        'Live air-quality data is unavailable right now. You can enter a PM2.5 reading manually and try again.',
-        { code: 'air_unavailable' },
-      );
-    }
-  }
+  const readings = createReadings(air);
 
-  function aqiOrFail(data) {
-    const aqi = computeAqi({ pm25: data.pm25, pm10: data.pm10 });
-    if (!aqi)
-      throw new HttpError(502, 'Could not compute an air-quality index from the data received.', {
-        code: 'aqi_failed',
-      });
-    return aqi;
-  }
-
-  /** The briefing (Gemini, else the rules template) and the page text (Hindi from Gemini or built in). */
-  async function narrate({ profile, cityName, aqi, data, window, thePlan, exposure }) {
-    const actions = [...thePlan.routine, ...thePlan.indoor, ...thePlan.alternatives];
-    const facts = briefingFacts({
-      cityName,
-      profile,
-      aqi,
-      pm25: data.pm25,
-      exposure,
-      window,
-      plan: thePlan,
-      actions,
-    });
-
-    // Briefing and (for Hindi) the plan translation run side by side; each has a deterministic fallback.
-    const english = collectTexts(thePlan, exposure, DISCLAIMER);
-    const [generated, translated] = await Promise.all([
-      llm.briefing({ facts, untrusted: { notes: profile.notes }, allowedIds: actions.map((a) => a.id) }),
-      profile.lang === 'hi' ? translateTexts(llm, english, builtinTexts(thePlan, exposure)) : null,
-    ]);
-    const briefing =
-      generated ??
-      fallbackBriefing({ cityName, aqi, pm25: data.pm25, plan: thePlan, exposure, lang: profile.lang });
-    if (briefing.topActionIds.length === 0) briefing.topActionIds = topActions(thePlan).map((a) => a.id);
-
-    // The page text: Hindi from Gemini or the built-in catalogue, otherwise English. Internal fields are dropped.
-    const view = translated
-      ? applyTexts(thePlan, exposure, translated.texts)
-      : publicText(thePlan, exposure, DISCLAIMER);
-    return { briefing, translated, view };
-  }
-
-  async function plan(req, res) {
-    const parsed = validatePlanInput(await readJson(req, res));
-    if (!parsed.ok) throw badInput(parsed);
-    const profile = parsed.value;
-    const city = CITIES[profile.city];
-    const cityName = profile.lang === 'hi' ? city.nameHi : city.name; // the name as written in the reply language
-
-    const data = await airFor(profile.city, profile.manualPm25);
-    const aqi = aqiOrFail(data);
-    const window = data.time ? bestWindow(data.hourly, data.time) : null;
-    const when = now();
-    const thePlan = buildPlan({
-      levelIndex: aqi.levelIndex,
-      pm25: data.pm25,
-      profile,
-      cityKey: profile.city,
-      window,
-      now: when,
-    });
-    const exposure = estimateExposure({ pm25: data.pm25, profile, window, levelIndex: aqi.levelIndex });
-    const { briefing, translated, view } = await narrate({
-      profile,
-      cityName,
-      aqi,
-      data,
-      window,
-      thePlan,
-      exposure,
-    });
-
-    return {
-      city: {
-        key: profile.city,
-        name: city.name,
-        state: city.state,
-        nameHi: city.nameHi,
-        stateHi: city.stateHi,
-      },
-      air: airBlock({ aqi, data, lang: profile.lang, detail: true }),
-      window,
-      exposure: view.exposure,
-      plan: view.plan,
-      briefing: { ...briefing, lang: briefing.lang ?? profile.lang }, // the language the text is really in
-      textLang: translated ? 'hi' : 'en', // the language of the plan, alerts, assumptions and disclaimer
-      translation: translated ? translated.source : null, // 'gemini' | 'builtin' | 'mixed' when textLang is hi
-      generatedAt: when.toISOString(),
-      disclaimer: view.disclaimer,
-    };
-  }
-
-  /** Lightweight live reading for the hero: current AQI only (cached upstream, 10 min). */
+  /**
+   * Lightweight live reading for the hero: current AQI only (cached upstream, 10 min).
+   * @param {URL} url
+   */
   async function airNow(url) {
     const cityKey = url.searchParams.get('city') ?? '';
     if (!isCity(cityKey)) throw new HttpError(400, 'Please choose a supported city.', { code: 'bad_city' });
-    const data = await airFor(cityKey, null);
+    const data = await readings.airFor(cityKey, null);
     const aqi = aqiOrFail(data);
     return {
       city: { key: cityKey, name: CITIES[cityKey].name, nameHi: CITIES[cityKey].nameHi },
-      air: airBlock({ aqi, data, lang: 'en', detail: false }),
+      air: airSummary({ aqi, data }),
     };
   }
 
-  async function ask(req, res) {
-    const parsed = validateAskInput(await readJson(req, res));
-    if (!parsed.ok) throw badInput(parsed);
-    if (!llm.enabled) {
-      throw new HttpError(
-        503,
-        'The AI assistant is not configured on this server. The personalised plan above still works.',
-        { code: 'ask_off' },
-      );
-    }
-
-    const { city: cityKey, question, lang } = parsed.value;
-    /** @type {{value:number, category:string, pm25:number}|null} */
-    let aqiFacts = null;
-    try {
-      const data = await air.get(cityKey);
-      const aqi = computeAqi(data);
-      if (aqi) aqiFacts = { value: aqi.value, category: aqi.category, pm25: Math.round(data.pm25) };
-    } catch (err) {
-      // not fatal: the question can still be answered
-      console.error(`[ask] answering without live air data: ${err?.message}`);
-    }
-    const answer = await llm.answer({
-      facts: { city: CITIES[cityKey].name, lang, aqi: aqiFacts, guidelines: PM25_GUIDELINES },
-      untrusted: { question },
-    });
-    if (!answer)
-      throw new HttpError(502, 'The AI assistant could not answer right now. Please try again.', {
-        code: 'ask_failed',
-      });
-    return { answer, lang };
-  }
-
-  return { plan, airNow, ask };
+  return {
+    plan: createPlanHandler({ readings, llm, now }),
+    airNow,
+    ask: createAskHandler({ readings, llm }),
+  };
 }

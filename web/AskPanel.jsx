@@ -1,29 +1,66 @@
 import { useState } from 'react';
+import { DEFAULT_LANG } from '../src/languages.js';
+import { QUESTION_MAX, QUESTION_MIN } from '../src/limits.js';
 import { postAsk } from './api.js';
 import { useT } from './i18n.js';
 import { errorMessage } from './strings.js';
 
-/** Free-text follow-up question. The answer is plain text from the server, rendered as a text node. */
+/** @typedef {{status:'idle'|'busy'|'ok'|'error', text:string, lang:string, empty:boolean}} AskState */
+
+/**
+ * The live region under the form: the answer, or what went wrong.
+ * @param {{state:AskState}} props
+ */
+function AskOutput({ state }) {
+  const t = useT();
+  return (
+    <div className="ask__out" aria-live="polite">
+      {state.status === 'ok' ? (
+        <div className="answer">
+          <p lang={state.lang}>{state.text}</p>
+        </div>
+      ) : null}
+      {state.status === 'error' ? (
+        <p id="ask-error" className="error" lang={state.empty ? undefined : state.lang}>
+          {state.empty ? t('ask.empty') : state.text}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Free-text follow-up question. The answer is plain text from the server, rendered as a text node.
+ * @param {{city:string, lang:string}} props
+ */
 export default function AskPanel({ city, lang }) {
   const t = useT();
   const [question, setQuestion] = useState('');
-  const [state, setState] = useState({ status: 'idle', text: '', lang: 'en', empty: false });
+  const [state, setState] = useState(
+    /** @type {AskState} */ ({
+      status: 'idle',
+      text: '',
+      lang: DEFAULT_LANG,
+      empty: false,
+    }),
+  );
 
+  /** @param {import('react').FormEvent} e */
   const submit = async (e) => {
     e.preventDefault();
     const q = question.trim();
-    if (q.length < 3) {
-      setState({ status: 'error', text: '', lang: 'en', empty: true });
+    if (q.length < QUESTION_MIN) {
+      setState({ status: 'error', text: '', lang: DEFAULT_LANG, empty: true });
       return;
     }
     if (state.status === 'busy') return;
-    setState({ status: 'busy', text: '', lang: 'en', empty: false });
+    setState({ status: 'busy', text: '', lang: DEFAULT_LANG, empty: false });
     try {
       const { answer, lang: answerLang } = await postAsk({ city, question: q, lang });
       setState({ status: 'ok', text: answer, lang: answerLang, empty: false });
     } catch (err) {
       const { text, translated } = errorMessage(lang, err);
-      setState({ status: 'error', text, lang: translated ? lang : 'en', empty: false });
+      setState({ status: 'error', text, lang: translated ? lang : DEFAULT_LANG, empty: false });
     }
   };
 
@@ -37,7 +74,7 @@ export default function AskPanel({ city, lang }) {
           <input
             id="question"
             type="text"
-            maxLength={300}
+            maxLength={QUESTION_MAX}
             autoComplete="off"
             placeholder={t('ask.placeholder')}
             value={question}
@@ -50,18 +87,7 @@ export default function AskPanel({ city, lang }) {
           {busy ? t('ask.busy') : t('ask.send')}
         </button>
       </form>
-      <div className="ask__out" aria-live="polite">
-        {state.status === 'ok' ? (
-          <div className="answer">
-            <p lang={state.lang}>{state.text}</p>
-          </div>
-        ) : null}
-        {state.status === 'error' ? (
-          <p id="ask-error" className="error" lang={state.empty ? undefined : state.lang}>
-            {state.empty ? t('ask.empty') : state.text}
-          </p>
-        ) : null}
-      </div>
+      <AskOutput state={state} />
     </section>
   );
 }
