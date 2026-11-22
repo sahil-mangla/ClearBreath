@@ -210,8 +210,8 @@ export function createHandlers({ air, llm, now }) {
       const data = await air.get(cityKey);
       const aqi = computeAqi(data);
       if (aqi) aqiFacts = { value: aqi.value, category: aqi.category, pm25: Math.round(data.pm25) };
-    } catch {
-      /* answer without live context */
+    } catch (err) {
+      console.error(`[ask] answering without live air data: ${err?.message}`); // not fatal: the question can still be answered
     }
     const answer = await llm.answer({
       facts: { city: CITIES[cityKey].name, lang, aqi: aqiFacts, guidelines: PM25_GUIDELINES },

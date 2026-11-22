@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { postPlan } from './api.js';
 import { cityLabel, translate } from './strings.js';
 
@@ -27,7 +27,7 @@ export function toRequest(v) {
 /**
  * Builds a plan from the form values and tracks the request: busy flag, field errors, the screen-reader
  * status line and the result. A request that arrives while another is running waits for it (the latest
- * wins) instead of being dropped. `moveFocus` says whether the new plan should take focus.
+ * wins) instead of being dropped. `shouldFocus()` says whether the latest plan should take focus.
  */
 export function usePlanRequest() {
   const [busy, setBusy] = useState(false);
@@ -38,6 +38,7 @@ export function usePlanRequest() {
   const running = useRef(false);
   const queued = useRef(null);
   const moveFocus = useRef(false);
+  const shouldFocus = useCallback(() => moveFocus.current, []);
 
   const build = async (values, { focus = true } = {}) => {
     if (running.current) {
@@ -74,5 +75,5 @@ export function usePlanRequest() {
     setStatus('');
   };
 
-  return { busy, errors, result, status, hazeView, setHazeView, moveFocus, build, reset };
+  return { busy, errors, result, status, hazeView, setHazeView, shouldFocus, build, reset };
 }

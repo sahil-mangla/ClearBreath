@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DEFAULTS as SERVER_DEFAULTS } from '../src/limits.js';
 import { getCities } from './api.js';
 import AskPanel from './AskPanel.jsx';
 import { usePrefersReducedMotion, useLiveAir, useLowPower } from './hooks.js';
 import { LangContext } from './i18n.js';
 import { clearedDensity, densityFor } from './lib.js';
+import LangToggle from './LangToggle.jsx';
 import PixelCity from './PixelCity.jsx';
 import PlanForm from './PlanForm.jsx';
 import Readout, { BandScale } from './Readout.jsx';
@@ -27,14 +29,14 @@ function storedLang() {
 
 const DEFAULTS = {
   city: 'delhi',
-  adults: '2',
-  children: '0',
-  seniors: '0',
+  adults: String(SERVER_DEFAULTS.adults),
+  children: String(SERVER_DEFAULTS.children),
+  seniors: String(SERVER_DEFAULTS.seniors),
   conditions: [],
-  commute: 'bus_metro',
-  commuteKm: '10',
-  cooking: 'lpg',
-  heating: 'none',
+  commute: SERVER_DEFAULTS.commute,
+  commuteKm: String(SERVER_DEFAULTS.commuteKm),
+  cooking: SERVER_DEFAULTS.cooking,
+  heating: SERVER_DEFAULTS.heating,
   hasPurifier: false,
   hasN95: false,
   lang: 'en',
@@ -50,7 +52,7 @@ export default function App() {
   const [paused, setPaused] = useState(false);
   const [cities, setCities] = useState(FALLBACK_CITIES);
   const [values, setValues] = useState(() => ({ ...DEFAULTS, lang: storedLang() }));
-  const { busy, errors, result, status, hazeView, setHazeView, moveFocus, build, reset } = usePlanRequest();
+  const { busy, errors, result, status, hazeView, setHazeView, shouldFocus, build, reset } = usePlanRequest();
   const resultsRef = useRef(null);
   const air = useLiveAir(values.city);
   const lang = values.lang;
@@ -100,10 +102,10 @@ export default function App() {
   // Bring a fresh plan into view and move focus to its heading.
   useEffect(() => {
     const el = resultsRef.current;
-    if (!result || !el || !moveFocus.current) return;
+    if (!result || !el || !shouldFocus()) return;
     el.focus({ preventScroll: true });
     el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  }, [result, reduced, moveFocus]);
+  }, [result, reduced, shouldFocus]);
 
   const liveAqi = result ? result.air.aqi : air.data?.air.aqi;
   const base = Number.isFinite(liveAqi) ? densityFor(liveAqi) : NO_READING_DENSITY;
@@ -125,26 +127,7 @@ export default function App() {
             ClearBreath
           </p>
           <div className="bar__tools">
-            <div className="langs" role="group" aria-label={t('lang.label')}>
-              <button
-                type="button"
-                className="btn btn--quiet"
-                lang="en"
-                aria-pressed={lang === 'en'}
-                onClick={() => changeLang('en')}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                className="btn btn--quiet"
-                lang="hi"
-                aria-pressed={lang === 'hi'}
-                onClick={() => changeLang('hi')}
-              >
-                हिन्दी
-              </button>
-            </div>
+            <LangToggle lang={lang} onChange={changeLang} label={t('lang.label')} />
             {reduced ? null : (
               <button
                 type="button"

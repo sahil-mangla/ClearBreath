@@ -14,3 +14,15 @@ export const LIMITS = {
 };
 
 export const NOTES_MAX = 200;
+export const QUESTION_MAX = 300;
+
+/** What the form starts with and what the server assumes when a field is left out. */
+export const DEFAULTS = {
+  adults: 2,
+  children: 0,
+  seniors: 0,
+  commute: 'bus_metro',
+  commuteKm: 10,
+  cooking: 'lpg',
+  heating: 'none',
+};

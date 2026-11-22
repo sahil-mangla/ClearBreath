@@ -1,6 +1,15 @@
 import { isCity } from './cities.js';
 import { LANGS } from './constants.js';
-import { COMMUTES, CONDITIONS, COOKING, HEATING, LIMITS, NOTES_MAX } from './limits.js';
+import {
+  COMMUTES,
+  CONDITIONS,
+  COOKING,
+  DEFAULTS,
+  HEATING,
+  LIMITS,
+  NOTES_MAX,
+  QUESTION_MAX,
+} from './limits.js';
 
 export { COMMUTES, CONDITIONS, COOKING, HEATING, LANGS };
 
@@ -71,13 +80,13 @@ export function validatePlanInput(body) {
 
   const value = {
     city: body.city,
-    adults: int(body.adults, ...LIMITS.adults, 2, 'Adults', errors),
-    children: int(body.children, ...LIMITS.children, 0, 'Children', errors),
-    seniors: int(body.seniors, ...LIMITS.seniors, 0, 'Seniors', errors),
-    commute: oneOf(body.commute, COMMUTES, 'bus_metro', 'Commute', errors),
-    commuteKm: int(body.commuteKm, ...LIMITS.commuteKm, 10, 'Commute distance', errors),
-    cooking: oneOf(body.cooking, COOKING, 'lpg', 'Cooking fuel', errors),
-    heating: oneOf(body.heating, HEATING, 'none', 'Heating', errors),
+    adults: int(body.adults, ...LIMITS.adults, DEFAULTS.adults, 'Adults', errors),
+    children: int(body.children, ...LIMITS.children, DEFAULTS.children, 'Children', errors),
+    seniors: int(body.seniors, ...LIMITS.seniors, DEFAULTS.seniors, 'Seniors', errors),
+    commute: oneOf(body.commute, COMMUTES, DEFAULTS.commute, 'Commute', errors),
+    commuteKm: int(body.commuteKm, ...LIMITS.commuteKm, DEFAULTS.commuteKm, 'Commute distance', errors),
+    cooking: oneOf(body.cooking, COOKING, DEFAULTS.cooking, 'Cooking fuel', errors),
+    heating: oneOf(body.heating, HEATING, DEFAULTS.heating, 'Heating', errors),
     hasPurifier: body.hasPurifier === true,
     hasN95: body.hasN95 === true,
     lang: oneOf(body.lang, LANGS, 'en', 'Language', errors),
@@ -118,7 +127,7 @@ export function validateAskInput(body) {
   }
   const errors = [];
   if (!isCity(body.city)) errors.push('Please choose a supported city.');
-  const question = cleanText(body.question, 300);
+  const question = cleanText(body.question, QUESTION_MAX);
   if (question.length < 3) errors.push('Please type a question (at least 3 characters).');
   const lang = oneOf(body.lang, LANGS, 'en', 'Language', errors);
   return errors.length ? { ok: false, errors } : { ok: true, value: { city: body.city, question, lang } };

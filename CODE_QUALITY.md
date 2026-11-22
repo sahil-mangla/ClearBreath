@@ -15,7 +15,7 @@ How the code is organised, and the checks that keep it that way. Run everything 
 | Domain | `src/aqi.js`, `cities.js`, `validate.js`, `hi.js`, `translate.js`, `llm.js`, `airdata.js`, `determinism.js`, `ratelimit.js` | Pure or injectable, each with its own test file |
 | | `src/limits.js` | The allowed form values and numeric ranges, shared by server validation and the form |
 | Front end | `web/` (React) | `App.jsx` (layout), `usePlanRequest.js` (request queue, errors, result), `PlanForm.jsx` with `FormSections.jsx` and `FormFields.jsx`, pure helpers in `lib.js`; bundled to `public/app.js` |
-| Tests | `test/backend/`, `test/web/`, `test/helpers/` | One test file per module; a golden test pins the whole rules engine |
+| Tests | `test/backend/`, `test/web/`, `test/helpers/` | A test file per area (HTTP helpers, static serving, server, validation, rules, AQI, Hindi, Gemini client, front end); a golden test pins the whole rules engine |
 
 ## How the rules engine stays small
 

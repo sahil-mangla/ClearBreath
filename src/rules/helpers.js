@@ -29,14 +29,18 @@ export function fmtHour(hour) {
   return `${hour12} ${suffix}`;
 }
 
+/** A ratio as a whole percentage, for explanatory text. */
+export const percent = (ratio) => Math.round(ratio * 100);
+
 /** Round to one decimal place. */
 export const round1 = (n) => Math.round(n * 10) / 10;
 
 /**
- * One recommendation. `p` (the `params` argument) holds the figures and variant flags the text was built from, so the built-in
- * Hindi catalogue (hi.js) can rebuild the same advice deterministically. It is stripped before the response.
+ * One recommendation. `p` (the `params` argument) holds the figures and variant flags the text was built from,
+ * so the built-in Hindi catalogue (hi.js) can rebuild the same advice deterministically.
+ * It is stripped before the response.
+ * @returns {Action}
  */
-/** @returns {Action} */
 export const act = (id, priority, title, detail, impact, params = {}) => ({
   id,
   priority,

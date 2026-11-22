@@ -9,7 +9,7 @@ import {
   POLLUTED,
   WHO_PM25_24H,
 } from './constants.js';
-import { needsMask, round1 } from './helpers.js';
+import { needsMask, percent, round1 } from './helpers.js';
 
 const OTHER_OUTDOOR_HOURS = 1;
 const MAX_COMMUTE_HOURS = 3;
@@ -19,15 +19,17 @@ const commuteHours = (profile) =>
     ? 0
     : Math.min(MAX_COMMUTE_HOURS, (profile.commuteKm * 2) / COMMUTE_SPEED[profile.commute]);
 
-const percent = (ratio) => Math.round(ratio * 100);
+/** Indoor PM2.5 as a share of outdoor: today as usual (`planned` false) or following the plan. */
+export const indoorRatio = (profile, planned) => {
+  if (profile.hasPurifier) return planned ? INDOOR_RATIO.planPurifier : INDOOR_RATIO.baselinePurifier;
+  return planned ? INDOOR_RATIO.planNone : INDOOR_RATIO.baselineNone;
+};
 
 function describeAssumptions({ commuteH, profile, polluted, masked }) {
-  const baselineIndoor = percent(
-    profile.hasPurifier ? INDOOR_RATIO.baselinePurifier : INDOOR_RATIO.baselineNone,
-  );
-  const planIndoor = percent(profile.hasPurifier ? INDOOR_RATIO.planPurifier : INDOOR_RATIO.planNone);
+  const baselineIndoor = percent(indoorRatio(profile, false));
+  const planIndoor = percent(indoorRatio(profile, true));
   const withPlan = polluted
-    ? `With the plan: ${masked ? 'a fitted N95 outdoors (about 80% effective in real use), ' : ''}` +
+    ? `With the plan: ${masked ? `a fitted N95 outdoors (about ${percent(1 - MASK_FACTOR)}% effective in real use), ` : ''}` +
       `outdoor errands in the cleanest forecast hour, windows shut at peak times and ` +
       `${profile.hasPurifier ? 'your purifier running' : 'a sealed room'} (indoor air about ${planIndoor}% of outdoor).`
     : 'With the plan: the air is acceptable today, so the plan changes little and your modelled exposure stays about the same.';
@@ -57,18 +59,14 @@ export function estimateExposure({
   const polluted = levelIndex >= POLLUTED;
   const masked = needsMask(levelIndex, profile);
   const bestPm = forecast && polluted ? Math.min(pm25, forecast.bestPm25) : pm25;
-  const baselineIndoor = profile.hasPurifier ? INDOOR_RATIO.baselinePurifier : INDOOR_RATIO.baselineNone;
-  const planIndoor = polluted
-    ? profile.hasPurifier
-      ? INDOOR_RATIO.planPurifier
-      : INDOOR_RATIO.planNone
-    : baselineIndoor;
+  const baselineIndoor = indoorRatio(profile, false);
+  const planIndoor = polluted ? indoorRatio(profile, true) : baselineIndoor;
 
   /** Time-weighted daily average: commute, other outdoor errands, then the hours indoors. */
-  const dailyAverage = (commuteConc, otherConc, maskFactor, indoorRatio) =>
+  const dailyAverage = (commuteConc, otherConc, maskFactor, indoorShare) =>
     (commuteH * commuteConc * cabin * (cabin === 1 ? maskFactor : 1) +
       OTHER_OUTDOOR_HOURS * otherConc * maskFactor +
-      indoorH * pm25 * indoorRatio) /
+      indoorH * pm25 * indoorShare) /
     24;
 
   const baseline = dailyAverage(pm25, pm25, 1, baselineIndoor);

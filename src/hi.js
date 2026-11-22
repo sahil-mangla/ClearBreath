@@ -1,3 +1,7 @@
+import { MASK_FACTOR } from './rules/constants.js';
+import { indoorRatio } from './rules/exposure.js';
+import { percent } from './rules/helpers.js';
+
 /**
  * Built-in Hindi for everything the rules engine writes. It is the deterministic backup behind Gemini:
  * a pure function of each action's id and parameters (`p`), so the same plan always gives the same
@@ -231,9 +235,9 @@ const ALERTS_HI = {
 
 const assumptionsHi = ({ commuteH, hasPurifier, polluted, masked }) => [
   `आप लगभग ${commuteH.toFixed(1)} घंटे आने-जाने में, 1 घंटा बाहर के अन्य कामों में और बाकी समय घर के अंदर बिताते हैं।`,
-  `आज हमेशा की तरह: बाहर मास्क नहीं; घर के अंदर की हवा बाहर के स्तर की लगभग ${hasPurifier ? 50 : 80}% रहती है।`,
+  `आज हमेशा की तरह: बाहर मास्क नहीं; घर के अंदर की हवा बाहर के स्तर की लगभग ${percent(indoorRatio({ hasPurifier }, false))}% रहती है।`,
   polluted
-    ? `योजना के साथ: ${masked ? 'बाहर सही फ़िट वाला N95 (असल में लगभग 80% असरदार), ' : ''}बाहर के काम सबसे साफ़ पूर्वानुमान वाले घंटे में, पीक समय में खिड़कियाँ बंद और ${hasPurifier ? 'आपका प्यूरीफ़ायर चालू' : 'बंद कमरा'} (घर के अंदर की हवा बाहर की लगभग ${hasPurifier ? 30 : 50}%)।`
+    ? `योजना के साथ: ${masked ? `बाहर सही फ़िट वाला N95 (असल में लगभग ${percent(1 - MASK_FACTOR)}% असरदार), ` : ''}बाहर के काम सबसे साफ़ पूर्वानुमान वाले घंटे में, पीक समय में खिड़कियाँ बंद और ${hasPurifier ? 'आपका प्यूरीफ़ायर चालू' : 'बंद कमरा'} (घर के अंदर की हवा बाहर की लगभग ${percent(indoorRatio({ hasPurifier }, true))}%)।`
     : 'योजना के साथ: आज हवा ठीक है, इसलिए योजना से ज़्यादा फ़र्क़ नहीं पड़ता और आपका अनुमानित संपर्क लगभग वही रहता है।',
   'यह चित्रण के लिए सरल मॉडल है। असल संपर्क मास्क की फ़िटिंग, वेंटिलेशन और ट्रैफ़िक के साथ बदलता है।',
 ];

@@ -102,8 +102,8 @@ export function rateKey(ip) {
     .join(':')}::/64`;
 }
 
-/** The caller's address for rate limiting. Behind a trusted proxy, the last X-Forwarded-For hop is used. */
 /**
+ * The caller's address for rate limiting. Behind a trusted proxy, the last X-Forwarded-For hop is used.
  * @param {import('node:http').IncomingMessage} req
  * @param {boolean} trustProxy
  */
