@@ -1,3 +1,6 @@
+/** @typedef {import('./helpers.js').PlanContext} PlanContext */
+/** @typedef {import('./helpers.js').Action} Action */
+
 import { CONDITION_ADVICE, CONDITION_ORDER } from './constants.js';
 import { act, fmtHour, needsMask } from './helpers.js';
 
@@ -135,6 +138,7 @@ function commuteAction({ profile, polluted }) {
   return act('r-commute', 2, title, detail, impact, { mode: profile.commute });
 }
 
+/** @type {Array<(ctx: PlanContext) => Action | null>} */
 const BUILDERS = [
   windowAction,
   enjoyAction,
@@ -146,4 +150,5 @@ const BUILDERS = [
   commuteAction,
 ];
 
+/** @param {PlanContext} ctx */
 export const routineActions = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);

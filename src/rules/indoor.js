@@ -1,3 +1,6 @@
+/** @typedef {import('./helpers.js').PlanContext} PlanContext */
+/** @typedef {import('./helpers.js').Action} Action */
+
 import { act, fmtHour } from './helpers.js';
 
 /** Indoor-air actions. Each builder takes the plan context and returns one action, or null when it does not apply. */
@@ -131,6 +134,7 @@ function plantsAction({ polluted }) {
   );
 }
 
+/** @type {Array<(ctx: PlanContext) => Action | null>} */
 const BUILDERS = [
   heatingSafetyAction,
   sealAction,
@@ -142,4 +146,5 @@ const BUILDERS = [
   plantsAction,
 ];
 
+/** @param {PlanContext} ctx */
 export const indoorActions = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);

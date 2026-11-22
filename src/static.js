@@ -35,6 +35,11 @@ export function loadStatic(dir) {
 }
 
 /** Serve one loaded file. Pages, script and styles revalidate with an ETag (an unchanged file costs a 304). */
+/**
+ * @param {{type:string, raw:Buffer, etag:string, gzip:Buffer|null}} file one entry from loadStatic()
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ */
 export function serveStatic(file, req, res) {
   const gzip = file.gzip !== null && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
   const immutable = file.type === WOFF2;

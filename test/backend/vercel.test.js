@@ -2,16 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { SECURITY_HEADERS } from '../src/http.js';
-import handler from '../api/index.js';
+import { SECURITY_HEADERS } from '../../src/http.js';
+import handler from '../../api/index.js';
 
-const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
-const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const config = JSON.parse(readFileSync(new URL('../../vercel.json', import.meta.url), 'utf8'));
+const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
 test('vercel.json serves the committed public/ folder and rewrites only the API to the function', () => {
   assert.equal(config.outputDirectory, 'public');
-  assert.ok(existsSync(new URL('../public/index.html', import.meta.url)));
-  assert.ok(existsSync(new URL('../api/index.js', import.meta.url)));
+  assert.ok(existsSync(new URL('../../public/index.html', import.meta.url)));
+  assert.ok(existsSync(new URL('../../api/index.js', import.meta.url)));
   const sources = config.rewrites.map((r) => r.source);
   assert.deepEqual(sources.sort(), ['/api/:path*', '/healthz']);
   for (const r of config.rewrites) assert.equal(r.destination, '/api');

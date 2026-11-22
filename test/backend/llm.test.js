@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createLlm } from '../src/llm.js';
+import { createLlm } from '../../src/llm.js';
 
 const geminiReply = (obj) => ({
   ok: true,

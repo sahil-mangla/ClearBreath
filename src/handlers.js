@@ -98,26 +98,8 @@ export function createHandlers({ air, llm, now }) {
     return aqi;
   }
 
-  async function plan(req, res) {
-    const parsed = validatePlanInput(await readJson(req, res));
-    if (!parsed.ok) throw badInput(parsed.errors);
-    const profile = parsed.value;
-    const city = CITIES[profile.city];
-    const cityName = profile.lang === 'hi' ? city.nameHi : city.name; // the name as written in the reply language
-
-    const data = await airFor(profile.city, profile.manualPm25);
-    const aqi = aqiOrFail(data);
-    const window = data.time ? bestWindow(data.hourly, data.time) : null;
-    const when = now();
-    const thePlan = buildPlan({
-      levelIndex: aqi.levelIndex,
-      pm25: data.pm25,
-      profile,
-      cityKey: profile.city,
-      window,
-      now: when,
-    });
-    const exposure = estimateExposure({ pm25: data.pm25, profile, window, levelIndex: aqi.levelIndex });
+  /** The briefing (Gemini, else the rules template) and the page text (Hindi from Gemini or built in). */
+  async function narrate({ profile, cityName, aqi, data, window, thePlan, exposure }) {
     const actions = [...thePlan.routine, ...thePlan.indoor, ...thePlan.alternatives];
     const facts = briefingFacts({
       cityName,
@@ -145,6 +127,38 @@ export function createHandlers({ air, llm, now }) {
     const view = translated
       ? applyTexts(thePlan, exposure, translated.texts)
       : publicText(thePlan, exposure, DISCLAIMER);
+    return { briefing, translated, view };
+  }
+
+  async function plan(req, res) {
+    const parsed = validatePlanInput(await readJson(req, res));
+    if (!parsed.ok) throw badInput(parsed.errors);
+    const profile = parsed.value;
+    const city = CITIES[profile.city];
+    const cityName = profile.lang === 'hi' ? city.nameHi : city.name; // the name as written in the reply language
+
+    const data = await airFor(profile.city, profile.manualPm25);
+    const aqi = aqiOrFail(data);
+    const window = data.time ? bestWindow(data.hourly, data.time) : null;
+    const when = now();
+    const thePlan = buildPlan({
+      levelIndex: aqi.levelIndex,
+      pm25: data.pm25,
+      profile,
+      cityKey: profile.city,
+      window,
+      now: when,
+    });
+    const exposure = estimateExposure({ pm25: data.pm25, profile, window, levelIndex: aqi.levelIndex });
+    const { briefing, translated, view } = await narrate({
+      profile,
+      cityName,
+      aqi,
+      data,
+      window,
+      thePlan,
+      exposure,
+    });
 
     return {
       city: {

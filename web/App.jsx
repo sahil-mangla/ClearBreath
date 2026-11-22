@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getCities, postPlan } from './api.js';
+import { getCities } from './api.js';
 import AskPanel from './AskPanel.jsx';
 import { usePrefersReducedMotion, useLiveAir, useLowPower } from './hooks.js';
 import { LangContext } from './i18n.js';
@@ -12,6 +12,7 @@ import RightNow from './RightNow.jsx';
 import Smoke from './Smoke.jsx';
 import SmogText from './SmogText.jsx';
 import { cityLabel, LANGS, translate } from './strings.js';
+import { usePlanRequest } from './usePlanRequest.js';
 
 const LANG_KEY = 'clearbreath.lang';
 
@@ -43,38 +44,13 @@ const DEFAULTS = {
 const FALLBACK_CITIES = [{ key: 'delhi', name: 'Delhi', state: 'Delhi' }];
 const NO_READING_DENSITY = 0.55; // until the first live reading arrives
 
-const num = (v) => (String(v).trim() === '' ? undefined : Number(v));
-
-function toRequest(v) {
-  return {
-    city: v.city,
-    adults: num(v.adults),
-    children: num(v.children),
-    seniors: num(v.seniors),
-    conditions: v.conditions,
-    commute: v.commute,
-    commuteKm: num(v.commuteKm),
-    cooking: v.cooking,
-    heating: v.heating,
-    hasPurifier: v.hasPurifier,
-    hasN95: v.hasN95,
-    lang: v.lang,
-    notes: v.notes,
-    manualPm25: num(v.manualPm25),
-  };
-}
-
 export default function App() {
   const reduced = usePrefersReducedMotion();
   const lowPower = useLowPower();
   const [paused, setPaused] = useState(false);
   const [cities, setCities] = useState(FALLBACK_CITIES);
   const [values, setValues] = useState(() => ({ ...DEFAULTS, lang: storedLang() }));
-  const [busy, setBusy] = useState(false);
-  const [errors, setErrors] = useState(null);
-  const [result, setResult] = useState(null);
-  const [hazeView, setHazeView] = useState('plan');
-  const [status, setStatus] = useState('');
+  const { busy, errors, result, status, hazeView, setHazeView, moveFocus, build, reset } = usePlanRequest();
   const resultsRef = useRef(null);
   const air = useLiveAir(values.city);
   const lang = values.lang;
@@ -95,48 +71,13 @@ export default function App() {
 
   const changeCity = (city) => {
     set({ city });
-    setResult(null); // a plan belongs to the city it was built for
-    setHazeView('plan');
-    setErrors(null);
-    setStatus('');
+    reset();
   };
 
   const cityName = cityLabel(
     cities.find((c) => c.key === values.city),
     lang,
   );
-
-  // A request that arrives while another is running waits for it (the latest wins) instead of being dropped.
-  const busyRef = useRef(false);
-  const queued = useRef(null);
-  const moveFocus = useRef(false);
-
-  const build = async (vals, { focus = true } = {}) => {
-    if (busyRef.current) {
-      queued.current = { vals, focus };
-      return;
-    }
-    busyRef.current = true;
-    moveFocus.current = focus;
-    setErrors(null);
-    setBusy(true);
-    setStatus(translate(vals.lang, 'status.fetching'));
-    try {
-      const data = await postPlan(toRequest(vals));
-      setResult(data);
-      setHazeView('plan');
-      setStatus(translate(vals.lang, 'status.ready', { city: cityLabel(data.city, vals.lang) }));
-    } catch (err) {
-      setStatus(translate(vals.lang, 'status.failed'));
-      setErrors({ code: err.code, message: err.message, details: err.details, fields: err.fields });
-    } finally {
-      busyRef.current = false;
-      setBusy(false);
-      const next = queued.current;
-      queued.current = null;
-      if (next) build(next.vals, { focus: next.focus });
-    }
-  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -162,7 +103,7 @@ export default function App() {
     if (!result || !el || !moveFocus.current) return;
     el.focus({ preventScroll: true });
     el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
-  }, [result, reduced]);
+  }, [result, reduced, moveFocus]);
 
   const liveAqi = result ? result.air.aqi : air.data?.air.aqi;
   const base = Number.isFinite(liveAqi) ? densityFor(liveAqi) : NO_READING_DENSITY;

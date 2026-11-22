@@ -1,11 +1,8 @@
 import { isCity } from './cities.js';
 import { LANGS } from './constants.js';
+import { COMMUTES, CONDITIONS, COOKING, HEATING, LIMITS, NOTES_MAX } from './limits.js';
 
-export const COMMUTES = ['car', 'auto_cab', 'two_wheeler', 'bus_metro', 'walk_cycle', 'wfh'];
-export const COOKING = ['lpg', 'png', 'induction', 'biomass'];
-export const HEATING = ['none', 'electric', 'wood_coal'];
-export const CONDITIONS = ['asthma', 'heart', 'pregnancy'];
-export { LANGS };
+export { COMMUTES, CONDITIONS, COOKING, HEATING, LANGS };
 
 /** Strip control characters, collapse whitespace, cap length. Returns '' for non-strings. */
 export function cleanText(value, max) {
@@ -74,17 +71,17 @@ export function validatePlanInput(body) {
 
   const value = {
     city: body.city,
-    adults: int(body.adults, 1, 10, 2, 'Adults', errors),
-    children: int(body.children, 0, 10, 0, 'Children', errors),
-    seniors: int(body.seniors, 0, 10, 0, 'Seniors', errors),
+    adults: int(body.adults, ...LIMITS.adults, 2, 'Adults', errors),
+    children: int(body.children, ...LIMITS.children, 0, 'Children', errors),
+    seniors: int(body.seniors, ...LIMITS.seniors, 0, 'Seniors', errors),
     commute: oneOf(body.commute, COMMUTES, 'bus_metro', 'Commute', errors),
-    commuteKm: int(body.commuteKm, 0, 100, 10, 'Commute distance', errors),
+    commuteKm: int(body.commuteKm, ...LIMITS.commuteKm, 10, 'Commute distance', errors),
     cooking: oneOf(body.cooking, COOKING, 'lpg', 'Cooking fuel', errors),
     heating: oneOf(body.heating, HEATING, 'none', 'Heating', errors),
     hasPurifier: body.hasPurifier === true,
     hasN95: body.hasN95 === true,
     lang: oneOf(body.lang, LANGS, 'en', 'Language', errors),
-    notes: cleanText(body.notes, 200),
+    notes: cleanText(body.notes, NOTES_MAX),
     conditions: /** @type {string[]} */ ([]),
     manualPm25: /** @type {number|null} */ (null),
   };
@@ -98,13 +95,14 @@ export function validatePlanInput(body) {
   }
 
   if (body.manualPm25 !== undefined && body.manualPm25 !== null && body.manualPm25 !== '') {
+    const [min, max] = LIMITS.manualPm25;
     if (
       typeof body.manualPm25 !== 'number' ||
       !Number.isFinite(body.manualPm25) ||
-      body.manualPm25 < 0 ||
-      body.manualPm25 > 1000
+      body.manualPm25 < min ||
+      body.manualPm25 > max
     ) {
-      errors.push('Manual PM2.5 must be a number between 0 and 1000 µg/m³.');
+      errors.push(`Manual PM2.5 must be a number between ${min} and ${max} µg/m³.`);
     } else {
       value.manualPm25 = body.manualPm25;
     }

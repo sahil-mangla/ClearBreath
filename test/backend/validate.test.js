@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanText, validateAskInput, validatePlanInput } from '../src/validate.js';
+import { cleanText, validateAskInput, validatePlanInput } from '../../src/validate.js';
 
 test('accepts a minimal valid body and applies defaults', () => {
   const r = validatePlanInput({ city: 'delhi' });
@@ -70,7 +70,7 @@ test('validateAskInput requires a real question and a supported city', () => {
 });
 
 test('fieldsOf maps validation messages to form field ids, longest label first', async () => {
-  const { fieldsOf } = await import('../src/validate.js');
+  const { fieldsOf } = await import('../../src/validate.js');
   const bad = validatePlanInput({
     city: 'delhi',
     adults: 99,

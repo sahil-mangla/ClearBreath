@@ -7,10 +7,10 @@ import {
   numberTokens,
   sameNumbers,
   ungroundedNumbers,
-} from '../src/determinism.js';
-import { chunkTexts, translateTexts } from '../src/translate.js';
-import { createLlm } from '../src/llm.js';
-import { createApp } from '../src/app.js';
+} from '../../src/determinism.js';
+import { chunkTexts, translateTexts } from '../../src/translate.js';
+import { createLlm } from '../../src/llm.js';
+import { createApp } from '../../src/app.js';
 
 test('numbers are compared as values, ignoring Devanagari digits and names that contain digits', () => {
   assert.equal(normalizeDigits('५४.६ और १२'), '54.6 और 12');

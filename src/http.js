@@ -21,6 +21,13 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * Send a JSON reply with the security headers.
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} status
+ * @param {unknown} body
+ * @param {Record<string, string>} [headers] extra headers, e.g. Cache-Control
+ */
 export function sendJson(res, status, body, headers = {}) {
   res.writeHead(status, {
     ...SECURITY_HEADERS,
@@ -33,7 +40,12 @@ export function sendJson(res, status, body, headers = {}) {
 
 const tooLarge = () => new HttpError(413, 'Request body too large.', { code: 'too_large' });
 
-/** Read a small JSON body. Rejects with an HttpError for a wrong type, oversize body or invalid JSON. */
+/**
+ * Read a small JSON body. Rejects with an HttpError for a wrong type, oversize body or invalid JSON.
+ * @param {import('node:http').IncomingMessage} req
+ * @param {import('node:http').ServerResponse} res
+ * @returns {Promise<unknown>}
+ */
 export function readJson(req, res) {
   return new Promise((resolve, reject) => {
     if (!/^application\/json\b/i.test(req.headers['content-type'] ?? '')) {
@@ -91,6 +103,10 @@ export function rateKey(ip) {
 }
 
 /** The caller's address for rate limiting. Behind a trusted proxy, the last X-Forwarded-For hop is used. */
+/**
+ * @param {import('node:http').IncomingMessage} req
+ * @param {boolean} trustProxy
+ */
 export function clientIp(req, trustProxy) {
   let ip = req.socket.remoteAddress ?? 'unknown';
   if (trustProxy) {

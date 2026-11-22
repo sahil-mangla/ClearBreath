@@ -9,7 +9,7 @@ Winter smog guidance for Indian cities, in English and Hindi, with the impact of
 [![Deploy](https://img.shields.io/badge/CD-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/sahil-mangla/ClearBreath)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022-5fa04e?logo=nodedotjs&logoColor=white)
 ![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-140%20unit%20%2B%2017%20browser-brightgreen)
+![Tests](https://img.shields.io/badge/tests-141%20unit%20%2B%2017%20browser-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.2%20AA%20target-blue)
 ![CSP](https://img.shields.io/badge/CSP-default--src%20none-blue)
 ![Gemini](https://img.shields.io/badge/GenAI-Gemini%20with%20rules%20fallback-8e75ff)
@@ -48,8 +48,8 @@ Each criterion below names the evidence to check, so every claim can be verified
 | **Code quality** | `src/` (backend), `web/` (front end), `src/determinism.js` | Small single-purpose modules; pure functions for rules, AQI maths, validators and the Hindi catalogue; one definition of shared facts; zero runtime dependencies |
 | **Security** | `src/validate.js`, `src/app.js`, `src/llm.js`, `src/ratelimit.js` | Fixed city allow-list (no SSRF), strict validation, 8 KB body cap, strict CSP, server-only key, prompt-injection containment, per-IP and global limits |
 | **Efficiency** | `src/airdata.js`, `src/llm.js`, `src/app.js` | One upstream call per city per 10 minutes, hash-keyed Gemini caches, gzip and ETag, off-screen canvases pause, parallel translation |
-| **Testing** | `test/`, `scripts/browser-smoke.mjs`, `.github/workflows/ci.yml` | 140 backend, front-end and deploy tests, 17 real-Chrome checks, all run in CI and again before every deploy |
-| **Accessibility** | `web/PlanForm.jsx`, `web/SmogText.jsx`, `test/components.test.js` | Labels and fieldsets, `aria-invalid` with inline messages, focus management, pausable motion, measured contrast, `lang` handling |
+| **Testing** | `test/`, `scripts/browser-smoke.mjs`, `.github/workflows/ci.yml` | 141 backend, front-end and deploy tests, 17 real-Chrome checks, all run in CI and again before every deploy |
+| **Accessibility** | `web/PlanForm.jsx`, `web/SmogText.jsx`, `test/web/components.test.js` | Labels and fieldsets, `aria-invalid` with inline messages, focus management, pausable motion, measured contrast, `lang` handling |
 
 To verify everything yourself:
 
@@ -68,7 +68,7 @@ npm start                # http://127.0.0.1:3000
 
 ```bash
 npm ci                   # development only (React, esbuild, fonts)
-npm test                 # 140 tests: backend, front-end components, deploy config. No network.
+npm test                 # 141 tests: backend, front-end components, deploy config. No network.
 npm run test:browser     # 17 checks in real headless Chrome (skips if Chrome is absent)
 npm run build            # rebuild public/app.js after editing web/
 ```
@@ -109,21 +109,22 @@ flowchart LR
 | `server.js` | Local entry point: loads `.env`, starts the server |
 | `api/index.js` | Vercel entry point: the same handler, API only |
 | `vercel.json` | Vercel build, routing and header configuration |
-| `src/app.js` | Routing, security headers, rate limiting, static serving (ETag, gzip) |
-| `src/validate.js` | Allow-list validation and sanitisation of every input |
+| `src/app.js` | Routing and rate limiting only |
+| `src/http.js`, `src/static.js`, `src/handlers.js` | HTTP helpers and security headers; static serving (ETag, gzip); the plan, air and ask endpoints |
+| `src/validate.js`, `src/limits.js` | Allow-list validation and sanitisation of every input; the allowed values and ranges, shared with the form |
 | `src/cities.js` | The fixed list of 22 supported cities |
 | `src/airdata.js` | Open-Meteo client: timeout, 10-minute cache, in-flight de-duplication, stale-while-error, cleanest-hour finder |
 | `src/aqi.js` | India CPCB AQI sub-index and bands from PM2.5 and PM10 |
-| `src/rules.js` | Recommendation engine, impact constants, exposure model |
+| `src/rules.js`, `src/rules/` | Recommendation engine: one small file per concern (routine, indoor, alternatives, alerts, exposure, briefing) |
 | `src/llm.js` | Gemini client: schema-constrained output, temperature 0, fixed seed, hash-keyed caches, call budget |
 | `src/determinism.js` | Number-grounding and translation validators |
 | `src/hi.js`, `src/translate.js` | Built-in Hindi catalogue; chunked Gemini translation with per-chunk fallback |
 | `web/` | React front end source: form, results, readout, ask panel, smoke and skyline canvases |
 | `public/` | Built bundle, stylesheets, self-hosted fonts, HTML shell |
 | `scripts/` | esbuild build script and the real-Chrome smoke test |
-| `test/` | Unit, component and integration tests |
+| `test/backend/`, `test/web/` | Backend, rules (with a golden test), component and deploy tests |
 
-The backend is `server.js` and `src/`; the front end is `web/` built into `public/`. The front end imports two backend modules, `src/aqi.js` for the CPCB bands and `src/constants.js` for the language list, so both sides share one definition.
+The backend is `server.js` and `src/`; the front end is `web/` built into `public/`. The front end imports three backend modules, `src/aqi.js` for the CPCB bands, `src/constants.js` for the language list and `src/limits.js` for the form's allowed values, so both sides share one definition.
 
 ## CI/CD and deployment
 
@@ -133,11 +134,11 @@ flowchart LR
   P --> CD
   subgraph CI [GitHub Actions]
     direction LR
-    c1[npm ci] --> c1b[lint, types,<br/>format] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[140 tests] --> c5[17 real-Chrome<br/>checks]
+    c1[npm ci] --> c1b[lint, types,<br/>format] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[141 tests] --> c5[17 real-Chrome<br/>checks]
   end
   subgraph CD [Vercel]
     direction LR
-    d1[npm ci] --> d2[build] --> d3[140 tests<br/>gate the deploy] --> d4[CDN: public/<br/>Function: /api, bom1]
+    d1[npm ci] --> d2[build] --> d3[141 tests<br/>gate the deploy] --> d4[CDN: public/<br/>Function: /api, bom1]
   end
 ```
 
@@ -187,7 +188,7 @@ Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.m
 
 ### Testing
 
-140 tests with `node --test`, no network required, covering three layers:
+141 tests with `node --test`, no network required, covering three layers:
 
 - **Backend.** CPCB breakpoints and band edges; validation and injection strings; prototype-key and oversize inputs; the rules engine per scenario; the exposure model (clean days, open versus closed cabins); the air client (cache, de-duplication, timeouts, stale-while-error); the Gemini client (key placement, retry, budget, id filtering, clamping, rejection of ungrounded figures and links); determinism (identical requests give identical output, the Hindi catalogue is exhaustive over every action, translation validators reject wrong counts, missing Devanagari, markup and changed figures); and HTTP integration (security headers, path traversal, fonts, `/api/air`, and the 400, 405, 413, 415, 429, 502 and 503 paths, with and without Gemini).
 - **Front end.** The real React components are bundled with esbuild and rendered to HTML inside the test run, with no browser and no extra dependency. Tests check that every control has a bound label, fieldsets have legends, server field errors set `aria-invalid` with an inline message and a focusable summary, Hindi renders the same controls, the busy button stays focusable, and the animated headline is read once as plain text. Pure helpers (haze density, text timing, skyline, share text, low-power detection) and the English/Hindi string tables are tested too.

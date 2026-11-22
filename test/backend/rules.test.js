@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlan, estimateExposure, fallbackBriefing, fmtHour, EMISSION_FACTORS } from '../src/rules.js';
-import { computeAqi } from '../src/aqi.js';
+import { buildPlan, estimateExposure, fallbackBriefing, fmtHour, EMISSION_FACTORS } from '../../src/rules.js';
+import { computeAqi } from '../../src/aqi.js';
 
 const base = {
   city: 'delhi',

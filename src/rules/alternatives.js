@@ -1,3 +1,6 @@
+/** @typedef {import('./helpers.js').PlanContext} PlanContext */
+/** @typedef {import('./helpers.js').Action} Action */
+
 import { EMISSION_FACTORS, WORK_DAYS_PER_WEEK, WORK_WEEKS_PER_YEAR } from './constants.js';
 import { act, round1 } from './helpers.js';
 
@@ -117,6 +120,7 @@ function festiveAction({ festivalSeason }) {
   );
 }
 
+/** @type {Array<(ctx: PlanContext) => Action | null>} */
 const BUILDERS = [
   commuteAction,
   idleAction,
@@ -127,4 +131,5 @@ const BUILDERS = [
   festiveAction,
 ];
 
+/** @param {PlanContext} ctx */
 export const alternativeActions = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);

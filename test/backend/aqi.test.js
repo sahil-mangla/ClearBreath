@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { computeAqi, levelIndexFor, LEVELS } from '../src/aqi.js';
+import { computeAqi, levelIndexFor, LEVELS } from '../../src/aqi.js';
 
 test('PM2.5 band edges map to CPCB sub-indices', () => {
   assert.equal(computeAqi({ pm25: 0 }).value, 0);

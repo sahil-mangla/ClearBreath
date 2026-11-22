@@ -15,7 +15,7 @@ import {
   stepPuff,
   windowLit,
   withAlpha,
-} from '../web/lib.js';
+} from '../../web/lib.js';
 
 test('densityFor rises with AQI, stays in 0.08..1 and tolerates bad input', () => {
   assert.equal(densityFor(0), 0.08);

@@ -1,3 +1,6 @@
+/** @typedef {import('./helpers.js').PlanContext} PlanContext */
+/** @typedef {{key:string, level:string, text:string}} Alert */
+
 /** Alert banners shown above the plan. Order: severe air, then carbon monoxide, stubble smoke, medical care. */
 
 const SEVERE_TEXT =
@@ -41,6 +44,8 @@ function medicalAlert({ poor, vulnerable }) {
   };
 }
 
+/** @type {Array<(ctx: PlanContext) => Alert | null>} */
 const BUILDERS = [airAlert, carbonMonoxideAlert, stubbleAlert, medicalAlert];
 
+/** @param {PlanContext} ctx */
 export const alertsFor = (ctx) => BUILDERS.map((build) => build(ctx)).filter(Boolean);

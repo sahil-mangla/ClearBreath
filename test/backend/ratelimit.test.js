@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRateLimiter } from '../src/ratelimit.js';
+import { createRateLimiter } from '../../src/ratelimit.js';
 
 test('allows up to the limit then blocks until the window resets', () => {
   let t = 1000;

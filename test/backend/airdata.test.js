@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bestWindow, createAirClient } from '../src/airdata.js';
+import { bestWindow, createAirClient } from '../../src/airdata.js';
 
 const hours = (date, values, startHour = 0) =>
   values.map((pm25, i) => ({ time: `${date}T${String(startHour + i).padStart(2, '0')}:00`, pm25 }));

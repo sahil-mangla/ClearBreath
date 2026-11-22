@@ -1,6 +1,6 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createApp } from '../src/app.js';
+import { createApp } from '../../src/app.js';
 
 const AIR = {
   current: { time: '2026-11-21T10:00', pm2_5: 210, pm10: 290 },

@@ -1,5 +1,13 @@
 import { POLLUTED, POOR } from './constants.js';
 
+/**
+ * @typedef {{id:string, priority:number, title:string, detail:string, impact:string, p:object}} Action
+ * @typedef {{key:string, level:string, text:string}} Alert
+ * @typedef {{levelIndex:number, pm25:number, profile:import('../validate.js').PlanProfile, forecast:object|null,
+ *   city:object, polluted:boolean, poor:boolean, vulnerable:boolean, smogSeason:boolean, stubbleSeason:boolean,
+ *   festivalSeason:boolean}} PlanContext what every action builder receives; built once per request in plan.js
+ */
+
 /** Small pure helpers shared by the rules modules. */
 
 /** @returns {boolean} true when the household has a child, a senior or a listed health condition. */
@@ -28,6 +36,7 @@ export const round1 = (n) => Math.round(n * 10) / 10;
  * One recommendation. `p` (the `params` argument) holds the figures and variant flags the text was built from, so the built-in
  * Hindi catalogue (hi.js) can rebuild the same advice deterministically. It is stripped before the response.
  */
+/** @returns {Action} */
 export const act = (id, priority, title, detail, impact, params = {}) => ({
   id,
   priority,

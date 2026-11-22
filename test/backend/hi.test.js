@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyTexts, builtinTexts, collectTexts, DISCLAIMER_HI, hiHour, publicText } from '../src/hi.js';
-import { sameNumbers, hasDevanagari } from '../src/determinism.js';
-import { buildPlan, estimateExposure, fmtHour } from '../src/rules.js';
+import { applyTexts, builtinTexts, collectTexts, DISCLAIMER_HI, hiHour, publicText } from '../../src/hi.js';
+import { sameNumbers, hasDevanagari } from '../../src/determinism.js';
+import { buildPlan, estimateExposure, fmtHour } from '../../src/rules.js';
 
 const WINDOW = { bestHour: 13, bestPm25: 140, worstHour: 8, worstPm25: 260, bestDay: 'today' };
 const DISCLAIMER = 'General guidance, not medical advice. Impact figures are approximate estimates.';

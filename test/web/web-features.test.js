@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STRINGS, LANGS, translate } from '../web/strings.js';
-import { isUrgent, quickGroup } from '../web/quick.js';
-import { isLowPower } from '../web/power.js';
-import { planToText } from '../web/share.js';
+import { STRINGS, LANGS, translate } from '../../web/strings.js';
+import { isUrgent, quickGroup } from '../../web/quick.js';
+import { isLowPower } from '../../web/power.js';
+import { planToText } from '../../web/share.js';
 
 const slots = (s) => (typeof s === 'string' ? [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort() : []);
 

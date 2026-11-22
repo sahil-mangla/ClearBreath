@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadComponents } from './helpers/render.js';
+import { loadComponents } from '../helpers/render.js';
 
 const values = {
   adults: '2',
