@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { SECURITY_HEADERS } from '../src/app.js';
+import { SECURITY_HEADERS } from '../src/http.js';
 import handler from '../api/index.js';
 
 const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
