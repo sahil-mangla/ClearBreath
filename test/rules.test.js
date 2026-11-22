@@ -4,10 +4,29 @@ import { buildPlan, estimateExposure, fallbackBriefing, fmtHour, EMISSION_FACTOR
 import { computeAqi } from '../src/aqi.js';
 
 const base = {
-  city: 'delhi', adults: 2, children: 0, seniors: 0, conditions: [], commute: 'car', commuteKm: 10,
-  cooking: 'lpg', heating: 'none', hasPurifier: false, hasN95: false, lang: 'en', notes: '', manualPm25: null,
+  city: 'delhi',
+  adults: 2,
+  children: 0,
+  seniors: 0,
+  conditions: [],
+  commute: 'car',
+  commuteKm: 10,
+  cooking: 'lpg',
+  heating: 'none',
+  hasPurifier: false,
+  hasN95: false,
+  lang: 'en',
+  notes: '',
+  manualPm25: null,
 };
-const win = { bestHour: 15, bestPm25: 120, bestDay: 'today', worstHour: 7, worstPm25: 260, worstDay: 'today' };
+const win = {
+  bestHour: 15,
+  bestPm25: 120,
+  bestDay: 'today',
+  worstHour: 7,
+  worstPm25: 260,
+  worstDay: 'today',
+};
 const NOV = new Date('2026-11-21T06:00:00Z');
 const JUL = new Date('2026-07-15T06:00:00Z');
 
@@ -28,7 +47,8 @@ test('every action has an id, title, detail and an impact explanation', () => {
 
 test('smoggy day recommends N95, indoor exercise, sealing and the cleanest window', () => {
   const found = ids(plan());
-  for (const id of ['r-mask', 'r-exercise', 'r-window', 'i-seal', 'i-purifier']) assert.ok(found.includes(id), id);
+  for (const id of ['r-mask', 'r-exercise', 'r-window', 'i-seal', 'i-purifier'])
+    assert.ok(found.includes(id), id);
 });
 
 test('mask advice differs if the family already owns N95s', () => {
@@ -66,7 +86,10 @@ test('severe AQI always raises a critical alert', () => {
 test('biomass cooking is flagged as a top indoor issue; LPG gets ventilation advice', () => {
   assert.equal(plan({ cooking: 'biomass' }).indoor.find((a) => a.id === 'i-cooking').priority, 1);
   assert.equal(plan({ cooking: 'lpg' }).indoor.find((a) => a.id === 'i-cooking').priority, 3);
-  assert.equal(plan({ cooking: 'induction' }).indoor.find((a) => a.id === 'i-cooking'), undefined);
+  assert.equal(
+    plan({ cooking: 'induction' }).indoor.find((a) => a.id === 'i-cooking'),
+    undefined,
+  );
 });
 
 test('car commute yields a quantified CO2 saving that matches the emission factors', () => {
@@ -100,7 +123,10 @@ test('each section is capped to a readable size and sorted by priority', () => {
   const p = plan({ children: 1, seniors: 1, heating: 'wood_coal', cooking: 'biomass' });
   assert.ok(p.routine.length <= 6 && p.alternatives.length <= 5 && p.indoor.length <= 6);
   const pr = p.indoor.map((a) => a.priority);
-  assert.deepEqual(pr, [...pr].sort((a, b) => a - b));
+  assert.deepEqual(
+    pr,
+    [...pr].sort((a, b) => a - b),
+  );
 });
 
 test('exposure model: plan is lower than baseline and reports its assumptions', () => {
@@ -128,7 +154,13 @@ test('exposure model handles zero PM2.5 without dividing by zero', () => {
 test('fallback briefing names the city, AQI and the top actions', () => {
   const p = plan();
   const aqi = computeAqi({ pm25: 220 });
-  const b = fallbackBriefing({ cityName: 'Delhi', aqi, pm25: 220, plan: p, exposure: estimateExposure({ pm25: 220, profile: base, window: win }) });
+  const b = fallbackBriefing({
+    cityName: 'Delhi',
+    aqi,
+    pm25: 220,
+    plan: p,
+    exposure: estimateExposure({ pm25: 220, profile: base, window: win }),
+  });
   assert.match(b.text, /Delhi/);
   assert.match(b.text, /AQI/);
   assert.equal(b.source, 'rules');
@@ -138,12 +170,28 @@ test('fallback briefing names the city, AQI and the top actions', () => {
 test('Hindi fallback briefing is really Hindi, says so, and still picks three top actions', () => {
   const p = plan();
   const aqi = computeAqi({ pm25: 220 });
-  const b = fallbackBriefing({ cityName: 'Delhi', aqi, pm25: 220, plan: p, exposure: estimateExposure({ pm25: 220, profile: base, window: win }), lang: 'hi' });
+  const b = fallbackBriefing({
+    cityName: 'Delhi',
+    aqi,
+    pm25: 220,
+    plan: p,
+    exposure: estimateExposure({ pm25: 220, profile: base, window: win }),
+    lang: 'hi',
+  });
   assert.equal(b.lang, 'hi');
   assert.match(b.text, /[\u0900-\u097F]/);
   assert.match(b.text, /AQI \d+/);
   assert.equal(b.topActionIds.length, 3);
-  assert.equal(fallbackBriefing({ cityName: 'Delhi', aqi, pm25: 220, plan: p, exposure: estimateExposure({ pm25: 220, profile: base, window: win }) }).lang, 'en');
+  assert.equal(
+    fallbackBriefing({
+      cityName: 'Delhi',
+      aqi,
+      pm25: 220,
+      plan: p,
+      exposure: estimateExposure({ pm25: 220, profile: base, window: win }),
+    }).lang,
+    'en',
+  );
 });
 
 test('fmtHour formats 12-hour clock times', () => {
@@ -178,6 +226,13 @@ test('health conditions get their own conservative, doctor-first advice on pollu
   assert.ok(a, 'present on a Very Poor day');
   assert.match(a.detail, /Asthma:.*Pregnancy:/s, 'fixed order whatever the input order');
   assert.match(a.detail, /doctor/);
-  assert.equal(plan({ conditions: [] }).routine.some((x) => x.id === 'r-conditions'), false);
-  assert.equal(plan({ conditions: ['asthma'] }, { pm25: 20 }).routine.some((x) => x.id === 'r-conditions'), false, 'not on a clean day');
+  assert.equal(
+    plan({ conditions: [] }).routine.some((x) => x.id === 'r-conditions'),
+    false,
+  );
+  assert.equal(
+    plan({ conditions: ['asthma'] }, { pm25: 20 }).routine.some((x) => x.id === 'r-conditions'),
+    false,
+    'not on a clean day',
+  );
 });

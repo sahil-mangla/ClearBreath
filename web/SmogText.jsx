@@ -8,18 +8,24 @@ import { letterTiming, splitWords } from './lib.js';
  * Remount (change `key`) to replay. Under reduced motion CSS shows the text at rest.
  */
 export default function SmogText({ text, as: Tag = 'span', density = 0.4, className = '', lang, salt = 1 }) {
-  const words = useMemo(() => splitWords(text), [text]);
+  const words = useMemo(
+    () =>
+      splitWords(text).map((letters, i, all) => ({
+        letters,
+        start: all.slice(0, i).reduce((n, w) => n + w.length, 0), // index of the word's first letter
+      })),
+    [text],
+  );
   const [startDensity] = useState(density); // frozen so a late live reading does not retime a running animation
-  let index = 0;
   return (
     <Tag className={`smog ${className}`.trim()} lang={lang}>
       <span className="visually-hidden">{text}</span>
       <span className="smog__vis" aria-hidden="true" translate="no">
-        {words.map((letters, w) => (
+        {words.map(({ letters, start }, w) => (
           <Fragment key={w}>
             <span className="smog__w">
               {letters.map((ch, k) => {
-                const t = letterTiming(index++, startDensity, salt);
+                const t = letterTiming(start + k, startDensity, salt);
                 return (
                   <span
                     className="smog__l"

@@ -52,6 +52,7 @@ export function useLiveAir(city) {
     if (!city) return undefined;
     const hit = airCache.get(city);
     if (hit && Date.now() - hit.at < AIR_TTL_MS) {
+      // oxlint-disable-next-line react/set-state-in-effect -- syncing component state with an external (module-level) cache
       setState({ status: 'ok', data: hit.data, error: '' });
       return undefined;
     }

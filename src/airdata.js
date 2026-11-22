@@ -61,13 +61,17 @@ export function createAirClient({
     const url =
       `${BASE}?latitude=${c.lat}&longitude=${c.lon}` +
       '&current=pm2_5,pm10&hourly=pm2_5&forecast_days=2&timezone=Asia%2FKolkata';
-    const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json' } });
+    const res = await fetchImpl(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { accept: 'application/json' },
+    });
     if (!res.ok) throw new Error(`air-quality upstream status ${res.status}`);
     const json = await res.json();
 
     const pm25 = num(json?.current?.pm2_5);
     const time = json?.current?.time;
-    if (pm25 === null || typeof time !== 'string') throw new Error('air-quality upstream returned no current PM2.5');
+    if (pm25 === null || typeof time !== 'string')
+      throw new Error('air-quality upstream returned no current PM2.5');
 
     const times = json?.hourly?.time ?? [];
     const vals = json?.hourly?.pm2_5 ?? [];
@@ -85,7 +89,9 @@ export function createAirClient({
       const hit = cache.get(cityKey);
       if (hit && now() - hit.at < ttlMs) return hit.data;
       const stale = () =>
-        hit && now() - hit.at < staleMs ? { ...hit.data, source: `${SOURCE}, last reading (live feed unavailable)` } : null;
+        hit && now() - hit.at < staleMs
+          ? { ...hit.data, source: `${SOURCE}, last reading (live feed unavailable)` }
+          : null;
       const failed = failures.get(cityKey);
       if (failed && now() - failed.at < failMs) {
         const fallback = stale();

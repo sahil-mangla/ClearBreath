@@ -1,8 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  clamp, clearedDensity, densityFor, easeOutCubic, hash, letterTiming, makePuffs, makeSkyline, seedFor, SMOKE_LAYERS,
-  splitWords, stepPuff, windowLit, withAlpha,
+  clamp,
+  clearedDensity,
+  densityFor,
+  easeOutCubic,
+  hash,
+  letterTiming,
+  makePuffs,
+  makeSkyline,
+  seedFor,
+  SMOKE_LAYERS,
+  splitWords,
+  stepPuff,
+  windowLit,
+  withAlpha,
 } from '../web/lib.js';
 
 test('densityFor rises with AQI, stays in 0.08..1 and tolerates bad input', () => {
@@ -29,7 +41,10 @@ test('splitWords splits on whitespace into letters and keeps Devanagari clusters
   const hindi = splitWords('स्वच्छ हवा');
   assert.equal(hindi.length, 2);
   if (typeof Intl.Segmenter === 'function') {
-    assert.ok(hindi[0].length < Array.from('स्वच्छ').length, 'conjunct clusters are not split into code points');
+    assert.ok(
+      hindi[0].length < Array.from('स्वच्छ').length,
+      'conjunct clusters are not split into code points',
+    );
   }
 });
 
@@ -56,10 +71,17 @@ test('hash stays in [0,1) and is stable; seedFor is stable and differs per strin
 
 test('makePuffs is deterministic, fills every layer and keeps values in range', () => {
   const a = makePuffs();
-  assert.equal(a.length, SMOKE_LAYERS.reduce((n, l) => n + l.count, 0));
+  assert.equal(
+    a.length,
+    SMOKE_LAYERS.reduce((n, l) => n + l.count, 0),
+  );
   assert.deepEqual(a, makePuffs());
   for (const layer of [0, 1, 2]) assert.ok(a.some((p) => p.layer === layer));
-  assert.ok(a.every((p) => p.vx > 0 && p.s > 0.2 && p.s < 1 && [0, 1, 2].includes(p.tone) && [0, 1].includes(p.shape)));
+  assert.ok(
+    a.every(
+      (p) => p.vx > 0 && p.s > 0.2 && p.s < 1 && [0, 1, 2].includes(p.tone) && [0, 1].includes(p.shape),
+    ),
+  );
   const speed = (layer) => Math.min(...a.filter((p) => p.layer === layer).map((p) => p.vx));
   assert.ok(speed(2) > speed(0), 'near wisps move faster than the far bank (parallax)');
 });
@@ -98,7 +120,10 @@ test('the pointer pushes a puff away, then it springs back', () => {
 test('makeSkyline is deterministic, fills the width in three layers and stays inside the frame', () => {
   const a = makeSkyline(seedFor('delhi'), 200, 52, 'delhi');
   assert.deepEqual(a, makeSkyline(seedFor('delhi'), 200, 52, 'delhi'));
-  assert.deepEqual(a.layers.map((l) => l.name), ['far', 'mid', 'near']);
+  assert.deepEqual(
+    a.layers.map((l) => l.name),
+    ['far', 'mid', 'near'],
+  );
   for (const layer of a.layers) {
     assert.ok(layer.buildings.length > 8);
     for (const b of layer.buildings) {
@@ -110,7 +135,10 @@ test('makeSkyline is deterministic, fills the width in three layers and stays in
 });
 
 test('Delhi gets its landmarks, other cities do not', () => {
-  assert.deepEqual(makeSkyline(1, 200, 52, 'delhi').landmarks.map((l) => l.type), ['minar', 'gate']);
+  assert.deepEqual(
+    makeSkyline(1, 200, 52, 'delhi').landmarks.map((l) => l.type),
+    ['minar', 'gate'],
+  );
   assert.deepEqual(makeSkyline(1, 200, 52, 'patna').landmarks, []);
 });
 

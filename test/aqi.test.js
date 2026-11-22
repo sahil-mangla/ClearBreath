@@ -33,7 +33,18 @@ test('works with only one pollutant, rejects none or invalid input', () => {
 });
 
 test('level categories follow CPCB boundaries', () => {
-  const expected = [[50, 0], [51, 1], [100, 1], [101, 2], [200, 2], [201, 3], [300, 3], [301, 4], [400, 4], [401, 5]];
+  const expected = [
+    [50, 0],
+    [51, 1],
+    [100, 1],
+    [101, 2],
+    [200, 2],
+    [201, 3],
+    [300, 3],
+    [301, 4],
+    [400, 4],
+    [401, 5],
+  ];
   for (const [value, idx] of expected) assert.equal(levelIndexFor(value), idx, `AQI ${value}`);
   assert.equal(LEVELS.length, 6);
 });

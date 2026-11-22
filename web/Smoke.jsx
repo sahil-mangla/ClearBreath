@@ -64,15 +64,18 @@ function buildGrain() {
  * `lite` halves the clouds, the frame rate and the canvas size for weak devices.
  * Stops when the tab is hidden, when paused, and under reduced motion (which still draws the smoke, still).
  */
-export default function Smoke({ density, paused, variant = 'page', boost = 0, className = '', lite = false }) {
+export default function Smoke({
+  density,
+  paused,
+  variant = 'page',
+  boost = 0,
+  className = '',
+  lite = false,
+}) {
   const canvasRef = useRef(null);
   const reduced = usePrefersReducedMotion();
   const motion = !paused && !reduced;
   const shared = useRef({ target: density, current: density, motion, boost, kick: () => {} });
-
-  shared.current.target = density;
-  shared.current.motion = motion;
-  shared.current.boost = boost;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -223,9 +226,16 @@ export default function Smoke({ density, paused, variant = 'page', boost = 0, cl
     };
   }, [variant, lite]);
 
+  // Hand the latest props to the running animation loop (it reads them every frame), then wake it.
   useEffect(() => {
-    shared.current.kick();
+    const s = shared.current;
+    s.target = density;
+    s.motion = motion;
+    s.boost = boost;
+    s.kick();
   }, [density, motion, boost]);
 
-  return <canvas ref={canvasRef} className={`smoke smoke--${variant} ${className}`.trim()} aria-hidden="true" />;
+  return (
+    <canvas ref={canvasRef} className={`smoke smoke--${variant} ${className}`.trim()} aria-hidden="true" />
+  );
 }

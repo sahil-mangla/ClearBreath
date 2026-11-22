@@ -27,7 +27,8 @@ const en = {
   'band.4': 'Very Poor',
   'band.5': 'Severe',
   'scale.title': 'Where today sits on India’s scale',
-  'scale.lead': 'Bands follow India’s CPCB index. The smoke behind this page is drawn thicker as the number climbs.',
+  'scale.lead':
+    'Bands follow India’s CPCB index. The smoke behind this page is drawn thicker as the number climbs.',
   'scale.today': 'Today {aqi}',
   'scale.range': '{from} to {to}',
   'scale.aria': 'Today’s AQI is {aqi}, in the {band} band.',
@@ -53,7 +54,10 @@ const en = {
   'quick.severe': [
     ['Stay indoors', 'Keep windows and doors shut. Avoid outdoor exercise.'],
     ['If you must go out, wear a fitted N95', 'Keep the trip short.'],
-    ['Get medical help if needed', 'Trouble breathing, chest pain or dizziness: see a doctor, do not wait it out.'],
+    [
+      'Get medical help if needed',
+      'Trouble breathing, chest pain or dizziness: see a doctor, do not wait it out.',
+    ],
   ],
 
   'plan.title': 'Tell us about your home',
@@ -92,7 +96,8 @@ const en = {
   notes: 'Anything else we should know?',
   optional: 'Optional',
   'field.check': 'Please check this value.',
-  'notes.hint': 'For example: ground-floor flat next to a main road, or school at 8 am. Up to 200 characters.',
+  'notes.hint':
+    'For example: ground-floor flat next to a main road, or school at 8 am. Up to 200 characters.',
   'manual.summary': 'Live data not loading? Enter PM2.5 yourself',
   'manual.label': 'PM2.5 in µg/m³',
   submit: 'Build my clean-air plan',
@@ -118,7 +123,8 @@ const en = {
   'haze.usual': 'Today as usual',
   'haze.plan': 'With this plan',
   'haze.noteUsual': 'The smoke behind the page shows today’s outdoor air, AQI {aqi}.',
-  'haze.notePlan': 'The smoke behind the page now shows your modelled exposure with this plan. Outdoors it is still AQI {aqi}.',
+  'haze.notePlan':
+    'The smoke behind the page now shows your modelled exposure with this plan. Outdoors it is still AQI {aqi}.',
   'exposure.body':
     'You would breathe about {base} µg/m³ of PM2.5 over a day as usual, and about {plan} µg/m³ following this plan, roughly {pct}% lower. The WHO guideline is {who} µg/m³ and India’s standard is {india} µg/m³.',
   'exposure.how': 'How is this estimated?',
@@ -134,9 +140,11 @@ const en = {
   'err.generic': 'Something went wrong. Please try again.',
   'err.bad_input': 'Please fix the highlighted inputs.',
   'err.bad_city': 'Please choose a supported city.',
-  'err.air_unavailable': 'Live air-quality data is unavailable right now. You can enter a PM2.5 reading manually and try again.',
+  'err.air_unavailable':
+    'Live air-quality data is unavailable right now. You can enter a PM2.5 reading manually and try again.',
   'err.aqi_failed': 'Could not compute an air-quality index from the data received.',
-  'err.ask_off': 'The AI assistant is not configured on this server. The personalised plan above still works.',
+  'err.ask_off':
+    'The AI assistant is not configured on this server. The personalised plan above still works.',
   'err.ask_failed': 'The AI assistant could not answer right now. Please try again.',
   'err.rate_limited': 'Too many requests. Please wait a moment and try again.',
   'err.too_large': 'That request was too large. Please shorten your notes.',
@@ -277,7 +285,8 @@ const hi = {
   'haze.usual': 'आज, हमेशा की तरह',
   'haze.plan': 'इस योजना के साथ',
   'haze.noteUsual': 'पन्ने के पीछे का धुआँ आज की बाहरी हवा, AQI {aqi}, दिखा रहा है।',
-  'haze.notePlan': 'पन्ने के पीछे का धुआँ अब इस योजना के साथ आपके अनुमानित संपर्क को दिखा रहा है। बाहर अब भी AQI {aqi} है।',
+  'haze.notePlan':
+    'पन्ने के पीछे का धुआँ अब इस योजना के साथ आपके अनुमानित संपर्क को दिखा रहा है। बाहर अब भी AQI {aqi} है।',
   'exposure.body':
     'आम तौर पर आप दिन भर में लगभग {base} µg/m³ PM2.5 में साँस लेंगे, और इस योजना पर चलने से लगभग {plan} µg/m³, यानी करीब {pct}% कम। WHO का दिशानिर्देश {who} µg/m³ और भारत का मानक {india} µg/m³ है।',
   'exposure.how': 'यह अनुमान कैसे लगाया गया?',
@@ -293,7 +302,8 @@ const hi = {
   'err.generic': 'कुछ गड़बड़ हो गई। कृपया फिर कोशिश करें।',
   'err.bad_input': 'कृपया चिह्नित जानकारी ठीक करें।',
   'err.bad_city': 'कृपया समर्थित शहर चुनें।',
-  'err.air_unavailable': 'ताज़ा हवा की गुणवत्ता का डेटा अभी उपलब्ध नहीं है। आप PM2.5 की रीडिंग खुद भरकर फिर कोशिश कर सकते हैं।',
+  'err.air_unavailable':
+    'ताज़ा हवा की गुणवत्ता का डेटा अभी उपलब्ध नहीं है। आप PM2.5 की रीडिंग खुद भरकर फिर कोशिश कर सकते हैं।',
   'err.aqi_failed': 'मिले डेटा से वायु गुणवत्ता सूचकांक नहीं निकाला जा सका।',
   'err.ask_off': 'इस सर्वर पर AI सहायक चालू नहीं है। ऊपर की व्यक्तिगत योजना फिर भी काम करती है।',
   'err.ask_failed': 'AI सहायक अभी जवाब नहीं दे सका। कृपया फिर कोशिश करें।',
@@ -323,7 +333,13 @@ const hi = {
 export const STRINGS = Object.freeze({ en, hi });
 export const LANGS = Object.freeze([...SERVER_LANGS]);
 
-const ERR_ALIASES = { bad_type: 'bad_request', bad_json: 'bad_request', body_read: 'bad_request', bad_method: 'bad_request', not_found: 'bad_request' };
+const ERR_ALIASES = {
+  bad_type: 'bad_request',
+  bad_json: 'bad_request',
+  body_read: 'bad_request',
+  bad_method: 'bad_request',
+  not_found: 'bad_request',
+};
 
 /**
  * The text to show for a failed request. Errors carry a stable `code` (from the server or the client), which
@@ -337,8 +353,9 @@ export function errorMessage(lang, err) {
 }
 
 /** A city's name in the interface language (Hindi where the server supplied it). */
-export const cityLabel = (city, lang) => (lang === 'hi' && city?.nameHi ? city.nameHi : city?.name ?? '');
-export const stateLabel = (city, lang) => (lang === 'hi' && city?.stateHi ? city.stateHi : city?.state ?? '');
+export const cityLabel = (city, lang) => (lang === 'hi' && city?.nameHi ? city.nameHi : (city?.name ?? ''));
+export const stateLabel = (city, lang) =>
+  lang === 'hi' && city?.stateHi ? city.stateHi : (city?.state ?? '');
 
 /** Look up `key` in `lang` (falling back to English, then the key itself) and fill `{name}` slots. */
 export function translate(lang, key, vars) {

@@ -10,7 +10,8 @@ const DEVANAGARI = /[ऀ-ॿ]/;
 const NAMES_WITH_DIGITS = /PM\s?2\.5|PM\s?10|N\s?95|FFP\s?2|CO\s?2|CO₂|MERV[- ]?\d+|CADR/gi;
 
 /** Devanagari digits to ASCII, so "५४.६" and "54.6" compare equal. */
-export const normalizeDigits = (s) => String(s).replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)));
+export const normalizeDigits = (s) =>
+  String(s).replace(/[०-९]/g, (d) => String(DEVANAGARI_DIGITS.indexOf(d)));
 
 /** Every number written in the text, as normalised strings, in order. Identifier digits (N95, PM2.5) are ignored. */
 export function numberTokens(text) {

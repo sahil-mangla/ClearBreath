@@ -10,9 +10,7 @@
       "maxDuration": 30
     }
   },
-  "regions": [
-    "bom1"
-  ],
+  "regions": ["bom1"],
   "rewrites": [
     {
       "source": "/api/:path*",

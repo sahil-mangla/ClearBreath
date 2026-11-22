@@ -10,7 +10,12 @@ export default function RightNow({ aqi, levelIndex }) {
   const has = Number.isFinite(aqi) && Number.isInteger(levelIndex);
   const items = t(`quick.${quickGroup(has ? levelIndex : undefined)}`);
   return (
-    <section className="now" data-urgent={has && isUrgent(levelIndex)} data-level={has ? levelIndex : undefined} aria-labelledby="now-title">
+    <section
+      className="now"
+      data-urgent={has && isUrgent(levelIndex)}
+      data-level={has ? levelIndex : undefined}
+      aria-labelledby="now-title"
+    >
       <h2 id="now-title" className="now__title">
         {has ? t('now.title', { aqi }) : t('now.title.none')}
       </h2>

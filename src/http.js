@@ -84,14 +84,20 @@ function ipv6Groups(ip) {
 /** One IPv6 subscriber usually owns a whole /64, so key on the /64 or a single host could mint endless keys. */
 export function rateKey(ip) {
   if (!ip.includes(':') || ip.includes('.')) return ip; // IPv4 and IPv4-mapped addresses stay as they are
-  return `${ipv6Groups(ip).slice(0, 4).map((g) => g.padStart(4, '0')).join(':')}::/64`;
+  return `${ipv6Groups(ip)
+    .slice(0, 4)
+    .map((g) => g.padStart(4, '0'))
+    .join(':')}::/64`;
 }
 
 /** The caller's address for rate limiting. Behind a trusted proxy, the last X-Forwarded-For hop is used. */
 export function clientIp(req, trustProxy) {
   let ip = req.socket.remoteAddress ?? 'unknown';
   if (trustProxy) {
-    const forwarded = String(req.headers['x-forwarded-for'] ?? '').split(',').pop().trim();
+    const forwarded = String(req.headers['x-forwarded-for'] ?? '')
+      .split(',')
+      .pop()
+      ?.trim();
     if (forwarded) ip = forwarded;
   }
   return rateKey(ip);

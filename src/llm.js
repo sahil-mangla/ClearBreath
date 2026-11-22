@@ -56,8 +56,18 @@ Rules:
 /** Text that must never reach the page: markup, links, or anything that looks like an address. */
 const UNSAFE_TEXT = /[<>]|https?:|www\./i;
 
-const clampText = (s, max) => (typeof s === 'string' ? s.replace(/\p{Cc}/gu, ' ').trim().slice(0, max) : '');
+const clampText = (s, max) =>
+  typeof s === 'string'
+    ? s
+        .replace(/\p{Cc}/gu, ' ')
+        .trim()
+        .slice(0, max)
+    : '';
 
+/**
+ * @param {{apiKey?:string, model?:string, fetchImpl?:typeof fetch, timeoutMs?:number, retryDelayMs?:number,
+ *   maxCallsPerMin?:number, now?:() => number}} [options]
+ */
 export function createLlm({
   apiKey,
   model = 'gemini-3.5-flash-lite',
@@ -106,7 +116,10 @@ export function createLlm({
   const answerCache = makeCache();
   const translationCache = makeCache();
 
-  const keyOf = (instruction, payload) => createHash('sha256').update(`${model}\n${instruction}\n${JSON.stringify(payload)}`).digest('hex');
+  const keyOf = (instruction, payload) =>
+    createHash('sha256')
+      .update(`${model}\n${instruction}\n${JSON.stringify(payload)}`)
+      .digest('hex');
 
   /** One Gemini call returning parsed JSON, or null. Deterministic settings, one retry when Google is busy. */
   async function generate(instruction, payload, schema, maxOutputTokens, { timeout = timeoutMs } = {}) {
@@ -127,7 +140,7 @@ export function createLlm({
         fetchImpl(`${ENDPOINT}/${model}:generateContent`, {
           method: 'POST',
           signal: deadline,
-          headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
+          headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey ?? '' },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: instruction }] },
             contents: [{ role: 'user', parts: [{ text: JSON.stringify(payload) }] }],
@@ -179,7 +192,7 @@ export function createLlm({
       const ids = Array.isArray(out.topActionIds)
         ? [...new Set(out.topActionIds.filter((id) => typeof id === 'string' && allowed.has(id)))].slice(0, 3)
         : [];
-      const result = { text, topActionIds: ids, source: 'gemini' };
+      const result = { text, topActionIds: ids, source: /** @type {const} */ ('gemini') };
       briefingCache.remember(key, result);
       return result;
     },

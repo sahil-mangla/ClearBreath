@@ -77,7 +77,7 @@ export function computeAqi({ pm25, pm10 }) {
   const b = subIndex(pm10, PM10_BANDS);
   if (a === null && b === null) return null;
   const useA = b === null || (a !== null && a >= b);
-  const value = useA ? a : b;
+  const value = /** @type {number} */ (useA ? a : b);
   const levelIndex = levelIndexFor(value);
   return { value, levelIndex, category: LEVELS[levelIndex], dominant: useA ? 'PM2.5' : 'PM10' };
 }

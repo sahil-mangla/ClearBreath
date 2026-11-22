@@ -3,14 +3,36 @@ import assert from 'node:assert/strict';
 import { loadComponents } from './helpers/render.js';
 
 const values = {
-  adults: '2', children: '0', seniors: '0', conditions: [], commute: 'bus_metro', commuteKm: '10',
-  cooking: 'lpg', heating: 'none', hasPurifier: false, hasN95: false, lang: 'en', notes: '', manualPm25: '',
+  adults: '2',
+  children: '0',
+  seniors: '0',
+  conditions: [],
+  commute: 'bus_metro',
+  commuteKm: '10',
+  cooking: 'lpg',
+  heating: 'none',
+  hasPurifier: false,
+  hasN95: false,
+  lang: 'en',
+  notes: '',
+  manualPm25: '',
 };
 const noop = () => {};
 
 async function form(props = {}, lang = 'en') {
   const { render, h, PlanForm } = await loadComponents();
-  return render(h(PlanForm, { values, set: noop, onSubmit: noop, busy: false, errors: null, cityName: 'Delhi', ...props }), lang);
+  return render(
+    h(PlanForm, {
+      values,
+      set: noop,
+      onSubmit: noop,
+      busy: false,
+      errors: null,
+      cityName: 'Delhi',
+      ...props,
+    }),
+    lang,
+  );
 }
 
 test('every form control has a visible label bound to it', async () => {
@@ -33,8 +55,15 @@ test('a clean form has no error summary and no invalid fields', async () => {
 });
 
 test('server field errors mark the named fields invalid, with an inline message and a focusable summary', async () => {
-  const html = await form({ errors: { code: 'invalid_input', message: 'Please check the highlighted fields.', fields: ['adults', 'commute'] } });
-  for (const id of ['adults', 'commute']) assert.match(html, new RegExp(`id="${id}"[^>]*aria-invalid="true"`), `#${id} is invalid`);
+  const html = await form({
+    errors: {
+      code: 'invalid_input',
+      message: 'Please check the highlighted fields.',
+      fields: ['adults', 'commute'],
+    },
+  });
+  for (const id of ['adults', 'commute'])
+    assert.match(html, new RegExp(`id="${id}"[^>]*aria-invalid="true"`), `#${id} is invalid`);
   assert.doesNotMatch(html, /id="children"[^>]*aria-invalid/);
   assert.equal((html.match(/class="field__error"/g) ?? []).length, 2, 'one inline message per bad field');
   assert.match(html, /id="form-errors"[^>]*tabindex="-1"/);

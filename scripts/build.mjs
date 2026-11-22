@@ -23,8 +23,14 @@ await build({
 
 const FONTS = [
   ['node_modules/@fontsource/gloock/files/gloock-latin-400-normal.woff2', 'gloock-latin-400-normal.woff2'],
-  ['node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-wght-normal.woff2', 'hanken-grotesk-latin-wght-normal.woff2'],
-  ['node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-ext-wght-normal.woff2', 'hanken-grotesk-latin-ext-wght-normal.woff2'],
+  [
+    'node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-wght-normal.woff2',
+    'hanken-grotesk-latin-wght-normal.woff2',
+  ],
+  [
+    'node_modules/@fontsource-variable/hanken-grotesk/files/hanken-grotesk-latin-ext-wght-normal.woff2',
+    'hanken-grotesk-latin-ext-wght-normal.woff2',
+  ],
 ];
 await mkdir(at('public/fonts'), { recursive: true });
 for (const [from, to] of FONTS) await copyFile(at(from), at('public/fonts', to));

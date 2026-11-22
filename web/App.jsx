@@ -101,7 +101,10 @@ export default function App() {
     setStatus('');
   };
 
-  const cityName = cityLabel(cities.find((c) => c.key === values.city), lang);
+  const cityName = cityLabel(
+    cities.find((c) => c.key === values.city),
+    lang,
+  );
 
   // A request that arrives while another is running waits for it (the latest wins) instead of being dropped.
   const busyRef = useRef(false);
@@ -174,19 +177,40 @@ export default function App() {
         </a>
 
         <header className="bar">
-          {lowPower ? null : <Smoke variant="band" className="bar__smoke" density={density} boost={0.2} paused={paused} />}
-          <p className="bar__brand" lang="en">ClearBreath</p>
+          {lowPower ? null : (
+            <Smoke variant="band" className="bar__smoke" density={density} boost={0.2} paused={paused} />
+          )}
+          <p className="bar__brand" lang="en">
+            ClearBreath
+          </p>
           <div className="bar__tools">
             <div className="langs" role="group" aria-label={t('lang.label')}>
-              <button type="button" className="btn btn--quiet" lang="en" aria-pressed={lang === 'en'} onClick={() => changeLang('en')}>
+              <button
+                type="button"
+                className="btn btn--quiet"
+                lang="en"
+                aria-pressed={lang === 'en'}
+                onClick={() => changeLang('en')}
+              >
                 English
               </button>
-              <button type="button" className="btn btn--quiet" lang="hi" aria-pressed={lang === 'hi'} onClick={() => changeLang('hi')}>
+              <button
+                type="button"
+                className="btn btn--quiet"
+                lang="hi"
+                aria-pressed={lang === 'hi'}
+                onClick={() => changeLang('hi')}
+              >
                 हिन्दी
               </button>
             </div>
             {reduced ? null : (
-              <button type="button" className="btn btn--quiet" aria-pressed={paused} onClick={() => setPaused((p) => !p)}>
+              <button
+                type="button"
+                className="btn btn--quiet"
+                aria-pressed={paused}
+                onClick={() => setPaused((p) => !p)}
+              >
                 {t('pause')}
               </button>
             )}
@@ -222,19 +246,42 @@ export default function App() {
             <section id="plan" className="toolset" aria-labelledby="plan-title">
               <div className="toolset__sky" aria-hidden="true">
                 <PixelCity city={values.city} density={base} still={lowPower || paused} />
-                {lowPower ? null : <Smoke variant="band" className="toolset__smoke" density={base} boost={0.1} paused={paused} />}
+                {lowPower ? null : (
+                  <Smoke
+                    variant="band"
+                    className="toolset__smoke"
+                    density={base}
+                    boost={0.1}
+                    paused={paused}
+                  />
+                )}
               </div>
               <div className="panel plan">
                 <h2 id="plan-title">{t('plan.title')}</h2>
-                <PlanForm values={values} set={set} onSubmit={submit} busy={busy} errors={errors} cityName={cityName} />
+                <PlanForm
+                  values={values}
+                  set={set}
+                  onSubmit={submit}
+                  busy={busy}
+                  errors={errors}
+                  cityName={cityName}
+                />
               </div>
             </section>
 
             {result ? (
               <section className="panel panel--results" aria-label={t('results.aria')}>
                 {/* Squared so a modelled cut reads clearly in this small strip (the full-page haze keeps the plain scale). */}
-                {lowPower ? null : <Smoke variant="band" className="results__smoke" density={density ** 2} paused={paused} />}
-                <Results ref={resultsRef} result={result} hazeView={hazeView} onHazeView={setHazeView} density={base} />
+                {lowPower ? null : (
+                  <Smoke variant="band" className="results__smoke" density={density ** 2} paused={paused} />
+                )}
+                <Results
+                  ref={resultsRef}
+                  result={result}
+                  hazeView={hazeView}
+                  onHazeView={setHazeView}
+                  density={base}
+                />
               </section>
             ) : null}
 
@@ -250,7 +297,9 @@ export default function App() {
         </main>
 
         <footer className="foot">
-          {lowPower ? null : <Smoke variant="band" className="foot__smoke" density={density} boost={0.3} paused={paused} />}
+          {lowPower ? null : (
+            <Smoke variant="band" className="foot__smoke" density={density} boost={0.3} paused={paused} />
+          )}
           <p>{t('foot.text')}</p>
         </footer>
       </div>

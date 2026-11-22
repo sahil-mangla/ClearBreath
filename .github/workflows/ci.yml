@@ -13,6 +13,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Lint (oxlint, warnings fail the build)
+        run: npm run lint
+      - name: Type-check the server (tsc over JSDoc types)
+        run: npm run typecheck
+      - name: Formatting (Prettier)
+        run: npm run format:check
       - name: Build the front end
         run: npm run build
       - name: The committed bundle matches its source

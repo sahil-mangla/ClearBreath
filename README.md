@@ -133,7 +133,7 @@ flowchart LR
   P --> CD
   subgraph CI [GitHub Actions]
     direction LR
-    c1[npm ci] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[140 tests] --> c5[17 real-Chrome<br/>checks]
+    c1[npm ci] --> c1b[lint, types,<br/>format] --> c2[build] --> c3[bundle matches<br/>web/ source] --> c4[140 tests] --> c5[17 real-Chrome<br/>checks]
   end
   subgraph CD [Vercel]
     direction LR
@@ -141,7 +141,7 @@ flowchart LR
   end
 ```
 
-- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request. It builds, fails if the committed bundle differs from a fresh build of `web/`, then runs the unit suite and the real-browser smoke test.
+- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request. It lints (oxlint, warnings fail), type-checks the server (`tsc` over JSDoc types), checks formatting (Prettier), builds, fails if the committed bundle differs from a fresh build of `web/`, then runs the unit suite and the real-browser smoke test.
 - **CD** is Vercel's Git integration. The build command in `vercel.json` is `npm run build && npm test`, so a deploy that fails a test does not go live.
 - **Hosting.** `public/` is served from the CDN with the same security headers as the Node server (a test enforces that they match). `api/index.js` serves `/api/*` and `/healthz` in the Mumbai region (`bom1`) with a 30-second limit; behind Vercel the rate limiter keys on `X-Forwarded-For`.
 - **Configuration.** Set `GEMINI_API_KEY` (and optionally the variables above) in the Vercel project settings. Without a key the app serves the rules-engine answers.
@@ -155,7 +155,11 @@ All three asks are answered with India-specific content: CPCB AQI bands, GRAP in
 
 ### Code quality
 
-- One job per module; pure functions for the rules, the AQI maths, the validators and the Hindi catalogue, so the logic is testable without a server or a network.
+Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.md).
+
+- One job per module. The server is `http.js` (headers, errors, body parsing), `static.js` (assets, caching), `handlers.js` (the three endpoints) and `app.js` (routing only). The rules engine is one small file per concern under `src/rules/` (routine, indoor, alternatives, alerts, exposure, briefing), each action a short function.
+- Pure functions for the rules, the AQI maths, the validators and the Hindi catalogue, so the logic is testable without a server or a network.
+- Enforced in CI: `oxlint --deny-warnings`, `tsc` over the server's JSDoc types, Prettier, then the tests. `npm run check` runs all of them locally.
 - One definition of shared facts (AQI bands, language list, mask rule) rather than a copy on each side.
 - Zero runtime dependencies on the server. The front end is bundled once and committed.
 - English and Hindi plan text are kept in step by a test that checks identical keys and placeholders.

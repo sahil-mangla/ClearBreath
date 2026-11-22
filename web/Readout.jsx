@@ -3,7 +3,11 @@ import { BANDS, SCALE_MAX } from './bands.js';
 import { useLang, useT } from './i18n.js';
 import { cityLabel, stateLabel } from './strings.js';
 
-const timeFmt = new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+const timeFmt = new Intl.DateTimeFormat('en-IN', {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'Asia/Kolkata',
+});
 
 function observed(iso) {
   const d = new Date(iso);
@@ -16,7 +20,10 @@ export default function Readout({ cities, city, onCity, air, compact }) {
   const lang = useLang();
   const reading = air.data?.air;
   const shown = Math.round(useTween(reading ? reading.aqi : 0));
-  const cityName = cityLabel(cities.find((c) => c.key === city), lang);
+  const cityName = cityLabel(
+    cities.find((c) => c.key === city),
+    lang,
+  );
   const cat = reading ? t(`band.${reading.levelIndex}`) : '';
 
   return (
@@ -48,7 +55,11 @@ export default function Readout({ cities, city, onCity, air, compact }) {
             </span>
           </p>
           <p className="readout__meta">
-            {t('reading.meta', { pm: reading.pm25, dom: reading.dominant, time: observed(reading.observedAt) })}
+            {t('reading.meta', {
+              pm: reading.pm25,
+              dom: reading.dominant,
+              time: observed(reading.observedAt),
+            })}
           </p>
           <details className="why">
             <summary>{t('why.title')}</summary>
@@ -57,7 +68,9 @@ export default function Readout({ cities, city, onCity, air, compact }) {
         </div>
       ) : (
         <div className="readout__body" role="status">
-          <p className="readout__meta">{air.status === 'error' ? t('reading.fail', { error: air.error }) : t('reading.loading')}</p>
+          <p className="readout__meta">
+            {air.status === 'error' ? t('reading.fail', { error: air.error }) : t('reading.loading')}
+          </p>
         </div>
       )}
     </section>
@@ -81,7 +94,9 @@ export function BandScale({ aqi, levelIndex }) {
           >
             <span className="scale__name">{t(`band.${i}`)}</span>
             <span className="scale__range num">{t('scale.range', { from: b.from, to: b.to })}</span>
-            {has && levelIndex === i ? <span className="scale__today num">{t('scale.today', { aqi })}</span> : null}
+            {has && levelIndex === i ? (
+              <span className="scale__today num">{t('scale.today', { aqi })}</span>
+            ) : null}
           </div>
         ))}
         {has ? (

@@ -62,8 +62,8 @@ export function letterTiming(i, density, salt = 1) {
 
 /** Layer 0 is the far, slow, large bank; layer 2 is the near, quick, small wisps. */
 export const SMOKE_LAYERS = Object.freeze([
-  { count: 6, size: [0.55, 0.95], speed: [0.010, 0.018], alpha: 0.55 },
-  { count: 8, size: [0.35, 0.65], speed: [0.020, 0.032], alpha: 0.7 },
+  { count: 6, size: [0.55, 0.95], speed: [0.01, 0.018], alpha: 0.55 },
+  { count: 8, size: [0.35, 0.65], speed: [0.02, 0.032], alpha: 0.7 },
   { count: 7, size: [0.22, 0.42], speed: [0.036, 0.055], alpha: 0.8 },
 ]);
 
@@ -129,7 +129,10 @@ export function stepPuff(p, t, dt, pointer) {
  * ------------------------------------------------------------------ */
 
 const LANDMARKS = Object.freeze({
-  delhi: [{ type: 'minar', at: 0.18 }, { type: 'gate', at: 0.64 }],
+  delhi: [
+    { type: 'minar', at: 0.18 },
+    { type: 'gate', at: 0.64 },
+  ],
   mumbai: [{ type: 'gate', at: 0.5 }],
 });
 
@@ -165,8 +168,18 @@ export function makeSkyline(seed, cols, rows, cityKey) {
 
   const landmarks = (LANDMARKS[cityKey] ?? []).map(({ type, at }) =>
     type === 'minar'
-      ? { type, x: Math.round(cols * at), w: Math.max(5, Math.round(rows * 0.11)), h: Math.round(rows * 0.82) }
-      : { type, x: Math.round(cols * at), w: Math.max(14, Math.round(rows * 0.3)), h: Math.round(rows * 0.34) },
+      ? {
+          type,
+          x: Math.round(cols * at),
+          w: Math.max(5, Math.round(rows * 0.11)),
+          h: Math.round(rows * 0.82),
+        }
+      : {
+          type,
+          x: Math.round(cols * at),
+          w: Math.max(14, Math.round(rows * 0.3)),
+          h: Math.round(rows * 0.34),
+        },
   );
   return { cols, rows, layers, landmarks };
 }
@@ -181,7 +194,9 @@ export function windowLit(seed, x, y, tick = 0) {
 /** Append an alpha channel to an `oklch(...)`/`rgb(...)` token string for canvas gradients. */
 export function withAlpha(color, alpha) {
   const a = clamp(alpha, 0, 1).toFixed(3);
-  return String(color).trim().replace(/\)\s*$/, ` / ${a})`);
+  return String(color)
+    .trim()
+    .replace(/\)\s*$/, ` / ${a})`);
 }
 
 /** Ease-out for number tweens. */

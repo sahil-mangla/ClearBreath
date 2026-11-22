@@ -1,21 +1,38 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { allowedNumbers, checkTranslation, normalizeDigits, numberTokens, sameNumbers, ungroundedNumbers } from '../src/determinism.js';
+import {
+  allowedNumbers,
+  checkTranslation,
+  normalizeDigits,
+  numberTokens,
+  sameNumbers,
+  ungroundedNumbers,
+} from '../src/determinism.js';
 import { chunkTexts, translateTexts } from '../src/translate.js';
 import { createLlm } from '../src/llm.js';
 import { createApp } from '../src/app.js';
 
 test('numbers are compared as values, ignoring Devanagari digits and names that contain digits', () => {
   assert.equal(normalizeDigits('५४.६ और १२'), '54.6 और 12');
-  assert.deepEqual(numberTokens('Wear an N95 when PM2.5 is 54.60 µg/m³, 10-15 min, CO2 and MERV-13'), ['54.6', '10', '15']);
+  assert.deepEqual(numberTokens('Wear an N95 when PM2.5 is 54.60 µg/m³, 10-15 min, CO2 and MERV-13'), [
+    '54.6',
+    '10',
+    '15',
+  ]);
   assert.ok(sameNumbers('about 30-50%', 'लगभग ३०-५०%'));
   assert.ok(!sameNumbers('about 30-50%', 'लगभग 30-60%'));
   assert.ok(!sameNumbers('1 pm', 'दोपहर बजे'));
 });
 
 test('briefing figures above 10 must come from the facts; small counting numbers are free', () => {
-  const facts = { aqi: { value: 123, pm25: 67 }, exposure: { todayAsUsual: 54.6, withPlan: 31.6, reductionPct: 42, whoGuideline: 15 } };
-  assert.deepEqual(ungroundedNumbers('AQI 123, PM2.5 67; exposure falls from 54.6 to 31.6, a 42% cut vs WHO 15.', facts), []);
+  const facts = {
+    aqi: { value: 123, pm25: 67 },
+    exposure: { todayAsUsual: 54.6, withPlan: 31.6, reductionPct: 42, whoGuideline: 15 },
+  };
+  assert.deepEqual(
+    ungroundedNumbers('AQI 123, PM2.5 67; exposure falls from 54.6 to 31.6, a 42% cut vs WHO 15.', facts),
+    [],
+  );
   assert.deepEqual(ungroundedNumbers('About 55 and 32 when rounded, in 3 steps over 10 minutes.', facts), []);
   assert.deepEqual(ungroundedNumbers('It is above the guideline by 52.', facts), ['52']);
   assert.ok(allowedNumbers(facts).has('55'));
@@ -62,18 +79,37 @@ test('translateTexts: Gemini first, per-chunk built-in fallback, and null only w
   assert.equal(mixed.source, 'mixed');
   assert.deepEqual(mixed.texts, ['जी-x', 'ब2']);
 
-  const none = await translateTexts(fakeLlm(() => Promise.reject(new Error('down'))), long, hiBuiltin);
+  const none = await translateTexts(
+    fakeLlm(() => Promise.reject(new Error('down'))),
+    long,
+    hiBuiltin,
+  );
   assert.equal(none.source, 'builtin');
   assert.deepEqual(none.texts, hiBuiltin);
 
-  const off = await translateTexts(fakeLlm(() => assert.fail('must not call'), false), EN, BUILTIN);
+  const off = await translateTexts(
+    fakeLlm(() => assert.fail('must not call'), false),
+    EN,
+    BUILTIN,
+  );
   assert.equal(off.source, 'builtin');
   assert.deepEqual(off.texts, BUILTIN);
 
-  assert.equal(await translateTexts(fakeLlm(() => Promise.resolve(null)), EN, null), null);
+  assert.equal(
+    await translateTexts(
+      fakeLlm(() => Promise.resolve(null)),
+      EN,
+      null,
+    ),
+    null,
+  );
 });
 
-const reply = (obj, status = 200) => ({ ok: status === 200, status, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }] }) });
+const reply = (obj, status = 200) => ({
+  ok: status === 200,
+  status,
+  json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }] }),
+});
 
 test('llm: deterministic request settings, retry on busy, cache, and validation of translations', async () => {
   const seen = [];
@@ -99,28 +135,48 @@ test('llm: deterministic request settings, retry on busy, cache, and validation 
   assert.equal(seen.length, 2, 'identical request is served from the cache');
 
   // A translation that changes a figure is rejected, and the rejection is not cached.
-  const bad = createLlm({ apiKey: 'k', retryDelayMs: 0, fetchImpl: async () => reply({ translations: ['३ मास्क'] }) });
+  const bad = createLlm({
+    apiKey: 'k',
+    retryDelayMs: 0,
+    fetchImpl: async () => reply({ translations: ['३ मास्क'] }),
+  });
   assert.equal(await bad.translate(['Wear 2 masks']), null);
   assert.equal(await createLlm({ apiKey: '' }).translate(['x']), null, 'no key, no call');
 });
 
 test('llm: a briefing quoting a figure that is not in the facts is rejected', async () => {
   const facts = { aqi: { value: 123, pm25: 67 }, exposure: { whoGuideline: 15 } };
-  const ask = (briefing) => createLlm({ apiKey: 'k', fetchImpl: async () => reply({ briefing, topActionIds: [] }) }).briefing({ facts, untrusted: { notes: '' }, allowedIds: [] });
+  const ask = (briefing) =>
+    createLlm({ apiKey: 'k', fetchImpl: async () => reply({ briefing, topActionIds: [] }) }).briefing({
+      facts,
+      untrusted: { notes: '' },
+      allowedIds: [],
+    });
   assert.equal((await ask('AQI is 123 and PM2.5 is 67, above the WHO 15.')).source, 'gemini');
   assert.equal(await ask('You will be above the guideline by 52 points.'), null);
 });
 
 const AIR = {
   current: { time: '2026-11-21T10:00', pm2_5: 210, pm10: 290 },
-  hourly: { time: Array.from({ length: 24 }, (_, h) => `2026-11-21T${String(h).padStart(2, '0')}:00`), pm2_5: Array.from({ length: 24 }, (_, h) => (h === 15 ? 110 : 230)) },
+  hourly: {
+    time: Array.from({ length: 24 }, (_, h) => `2026-11-21T${String(h).padStart(2, '0')}:00`),
+    pm2_5: Array.from({ length: 24 }, (_, h) => (h === 15 ? 110 : 230)),
+  },
 };
 const boot = async (env, fetchImpl) => {
   const server = createApp({ env, fetchImpl, now: () => new Date('2026-11-21T05:00:00Z') });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  return { base: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => server.close(r)) };
+  return {
+    base: `http://127.0.0.1:${server.address().port}`,
+    close: () => new Promise((r) => server.close(r)),
+  };
 };
-const post = (base, body) => fetch(`${base}/api/plan`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json());
+const post = (base, body) =>
+  fetch(`${base}/api/plan`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then((r) => r.json());
 const airOnly = async (url) => {
   if (String(url).includes('air-quality-api')) return { ok: true, json: async () => AIR };
   throw new Error('network down');
@@ -129,7 +185,15 @@ const airOnly = async (url) => {
 test('without Gemini the same request always returns the identical response, English and Hindi', async () => {
   const a = await boot({}, airOnly);
   try {
-    const req = { city: 'delhi', adults: 2, children: 1, conditions: ['asthma'], commute: 'car', cooking: 'biomass', heating: 'wood_coal' };
+    const req = {
+      city: 'delhi',
+      adults: 2,
+      children: 1,
+      conditions: ['asthma'],
+      commute: 'car',
+      cooking: 'biomass',
+      heating: 'wood_coal',
+    };
     for (const lang of ['en', 'hi']) {
       const one = await post(a.base, { ...req, lang });
       const two = await post(a.base, { ...req, lang });
@@ -138,11 +202,19 @@ test('without Gemini the same request always returns the identical response, Eng
       assert.equal(one.translation, lang === 'hi' ? 'builtin' : null);
     }
     const hi = await post(a.base, { ...req, lang: 'hi' });
-    const texts = [hi.disclaimer, ...hi.plan.routine, ...hi.plan.indoor, ...hi.plan.alternatives].flatMap((x) => (typeof x === 'string' ? [x] : [x.title, x.detail, x.impact]));
-    assert.ok(texts.every((t) => /[ऀ-ॿ]/.test(t)), 'every server-written string is Hindi');
+    const texts = [hi.disclaimer, ...hi.plan.routine, ...hi.plan.indoor, ...hi.plan.alternatives].flatMap(
+      (x) => (typeof x === 'string' ? [x] : [x.title, x.detail, x.impact]),
+    );
+    assert.ok(
+      texts.every((t) => /[ऀ-ॿ]/.test(t)),
+      'every server-written string is Hindi',
+    );
     assert.ok(hi.plan.alerts.every((x) => /[ऀ-ॿ]/.test(x.text)));
     assert.ok(hi.exposure.assumptions.every((x) => /[ऀ-ॿ]/.test(x)));
-    assert.ok(hi.plan.routine.every((x) => !('p' in x)), 'internal params are not sent');
+    assert.ok(
+      hi.plan.routine.every((x) => !('p' in x)),
+      'internal params are not sent',
+    );
   } finally {
     await a.close();
   }
@@ -158,7 +230,11 @@ test('with Gemini the plan is translated by Gemini; a failing Gemini falls back 
     return airOnly(url);
   };
   const g = await boot({ GEMINI_API_KEY: 'k' }, translating);
-  const down = await boot({ GEMINI_API_KEY: 'k' }, async (url) => (String(url).includes('generativelanguage') ? { ok: false, status: 500, json: async () => ({}) } : airOnly(url)));
+  const down = await boot({ GEMINI_API_KEY: 'k' }, async (url) =>
+    String(url).includes('generativelanguage')
+      ? { ok: false, status: 500, json: async () => ({}) }
+      : airOnly(url),
+  );
   try {
     const body = { city: 'delhi', lang: 'hi', commute: 'bus_metro' };
     const viaGemini = await post(g.base, body);
@@ -172,7 +248,11 @@ test('with Gemini the plan is translated by Gemini; a failing Gemini falls back 
     try {
       const builtin = await post(offline.base, body);
       assert.equal(fallback.translation, 'builtin');
-      assert.deepEqual(fallback.plan, builtin.plan, 'a failed Gemini gives exactly the keyless built-in Hindi');
+      assert.deepEqual(
+        fallback.plan,
+        builtin.plan,
+        'a failed Gemini gives exactly the keyless built-in Hindi',
+      );
       assert.equal(fallback.disclaimer, builtin.disclaimer);
     } finally {
       await offline.close();

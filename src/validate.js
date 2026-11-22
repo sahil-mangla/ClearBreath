@@ -37,15 +37,34 @@ function oneOf(value, allowed, fallback, label, errors) {
 }
 
 // The label each message starts with -> the form field it is about, so the page can mark that field invalid.
-const FIELD_OF_LABEL = { Adults: 'adults', Children: 'children', Seniors: 'seniors', Commute: 'commute', 'Commute distance': 'commuteKm', 'Cooking fuel': 'cooking', Heating: 'heating', 'Manual PM2.5': 'manualPm25' };
+const FIELD_OF_LABEL = {
+  Adults: 'adults',
+  Children: 'children',
+  Seniors: 'seniors',
+  Commute: 'commute',
+  'Commute distance': 'commuteKm',
+  'Cooking fuel': 'cooking',
+  Heating: 'heating',
+  'Manual PM2.5': 'manualPm25',
+};
 
 /** The form field ids that the given validation messages are about (unknown messages map to nothing). */
 export function fieldsOf(messages) {
   const labels = Object.keys(FIELD_OF_LABEL).sort((a, b) => b.length - a.length); // 'Commute distance' before 'Commute'
-  return [...new Set(messages.map((m) => FIELD_OF_LABEL[labels.find((l) => m.startsWith(`${l} `))]).filter(Boolean))];
+  return [
+    ...new Set(
+      messages.map((m) => FIELD_OF_LABEL[labels.find((l) => m.startsWith(`${l} `))]).filter(Boolean),
+    ),
+  ];
 }
 
-/** @returns {{ok:true,value:object}|{ok:false,errors:string[]}} */
+/**
+ * @typedef {{city:string, adults:number, children:number, seniors:number, conditions:string[], commute:string,
+ *   commuteKm:number, cooking:string, heating:string, hasPurifier:boolean, hasN95:boolean,
+ *   manualPm25:number|null, notes:string, lang:string}} PlanProfile
+ */
+
+/** @returns {{ok:true,value:PlanProfile}|{ok:false,errors:string[]}} */
 export function validatePlanInput(body) {
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {
     return { ok: false, errors: ['Request body must be a JSON object.'] };
@@ -66,8 +85,8 @@ export function validatePlanInput(body) {
     hasN95: body.hasN95 === true,
     lang: oneOf(body.lang, LANGS, 'en', 'Language', errors),
     notes: cleanText(body.notes, 200),
-    conditions: [],
-    manualPm25: null,
+    conditions: /** @type {string[]} */ ([]),
+    manualPm25: /** @type {number|null} */ (null),
   };
 
   if (body.conditions !== undefined) {
@@ -79,7 +98,12 @@ export function validatePlanInput(body) {
   }
 
   if (body.manualPm25 !== undefined && body.manualPm25 !== null && body.manualPm25 !== '') {
-    if (typeof body.manualPm25 !== 'number' || !Number.isFinite(body.manualPm25) || body.manualPm25 < 0 || body.manualPm25 > 1000) {
+    if (
+      typeof body.manualPm25 !== 'number' ||
+      !Number.isFinite(body.manualPm25) ||
+      body.manualPm25 < 0 ||
+      body.manualPm25 > 1000
+    ) {
       errors.push('Manual PM2.5 must be a number between 0 and 1000 µg/m³.');
     } else {
       value.manualPm25 = body.manualPm25;

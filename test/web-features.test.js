@@ -37,12 +37,23 @@ test('translate fills slots, falls back to English, then to the key', () => {
   assert.match(translate('hi', 'status.ready', { city: 'दिल्ली' }), /दिल्ली/);
   assert.equal(translate('fr', 'city'), 'City');
   assert.equal(translate('en', 'no.such.key'), 'no.such.key');
-  assert.equal(translate('en', 'scale.today', {}), 'Today {aqi}', 'unfilled slots are left visible, not blanked');
+  assert.equal(
+    translate('en', 'scale.today', {}),
+    'Today {aqi}',
+    'unfilled slots are left visible, not blanked',
+  );
   assert.deepEqual(LANGS, ['en', 'hi']);
 });
 
 test('quickGroup follows the CPCB bands and defaults to the mildest set', () => {
-  assert.deepEqual([0, 1, 2, 3, 4, 5].map(quickGroup), ['clear', 'clear', 'moderate', 'poor', 'severe', 'severe']);
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(quickGroup), [
+    'clear',
+    'clear',
+    'moderate',
+    'poor',
+    'severe',
+    'severe',
+  ]);
   assert.equal(quickGroup(undefined), 'clear');
   assert.equal(quickGroup(2.5), 'clear');
   assert.equal(isUrgent(2), false);
@@ -52,7 +63,8 @@ test('quickGroup follows the CPCB bands and defaults to the mildest set', () => 
 
 test('every quick-action set has exactly three actions, and the severe set mentions medical help', () => {
   for (const lang of LANGS) {
-    for (const g of ['clear', 'moderate', 'poor', 'severe']) assert.equal(STRINGS[lang][`quick.${g}`].length, 3);
+    for (const g of ['clear', 'moderate', 'poor', 'severe'])
+      assert.equal(STRINGS[lang][`quick.${g}`].length, 3);
   }
   assert.match(STRINGS.en['quick.severe'].flat().join(' '), /doctor/i);
 });

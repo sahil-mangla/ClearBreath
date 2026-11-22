@@ -17,7 +17,10 @@ function Bars({ exposure: e }) {
         <div className="bars__row" key={kind}>
           <span className="bars__label">{label}</span>
           <span className="bars__track" aria-hidden="true">
-            <span className={`bars__fill bars__fill--${kind}`} style={{ '--p': Math.max(0.02, value / max) }} />
+            <span
+              className={`bars__fill bars__fill--${kind}`}
+              style={{ '--p': Math.max(0.02, value / max) }}
+            />
           </span>
           <strong className="bars__value num">{value} µg/m³</strong>
         </div>
@@ -104,7 +107,12 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
   return (
     <div className="results">
       <h2 ref={ref} tabIndex={-1} className="results__title">
-        <SmogText key={`${result.city.name}-${lang}`} text={t('results.title', { city: cityLabel(result.city, lang) })} density={density} salt={3} />
+        <SmogText
+          key={`${result.city.name}-${lang}`}
+          text={t('results.title', { city: cityLabel(result.city, lang) })}
+          density={density}
+          salt={3}
+        />
       </h2>
 
       <p className="results__air">
@@ -115,8 +123,14 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
       </p>
 
       {plan.alerts.map((a) => (
-        <p key={a.text} className={`alert alert--${a.level}`} role={a.level === 'critical' ? 'alert' : undefined}>
-          <strong>{t(`alert.${a.level === 'critical' ? 'critical' : a.level === 'warning' ? 'warning' : 'info'}`)}</strong>
+        <p
+          key={a.text}
+          className={`alert alert--${a.level}`}
+          role={a.level === 'critical' ? 'alert' : undefined}
+        >
+          <strong>
+            {t(`alert.${a.level === 'critical' ? 'critical' : a.level === 'warning' ? 'warning' : 'info'}`)}
+          </strong>
           <span lang={srcLang}>{a.text}</span>
         </p>
       ))}
@@ -133,16 +147,38 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
         <fieldset className="view">
           <legend>{t('haze.legend')}</legend>
           <label className="view__opt">
-            <input type="radio" name="hazeView" value="usual" checked={hazeView === 'usual'} onChange={() => onHazeView('usual')} />
+            <input
+              type="radio"
+              name="hazeView"
+              value="usual"
+              checked={hazeView === 'usual'}
+              onChange={() => onHazeView('usual')}
+            />
             <span>{t('haze.usual')}</span>
           </label>
           <label className="view__opt">
-            <input type="radio" name="hazeView" value="plan" checked={hazeView === 'plan'} onChange={() => onHazeView('plan')} />
+            <input
+              type="radio"
+              name="hazeView"
+              value="plan"
+              checked={hazeView === 'plan'}
+              onChange={() => onHazeView('plan')}
+            />
             <span>{t('haze.plan')}</span>
           </label>
         </fieldset>
-        <p className="exposure__note">{hazeView === 'plan' ? t('haze.notePlan', { aqi: air.aqi }) : t('haze.noteUsual', { aqi: air.aqi })}</p>
-        <p>{t('exposure.body', { base: e.baseline, plan: e.plan, pct: e.reductionPct, who: e.whoGuideline, india: e.indiaStandard })}</p>
+        <p className="exposure__note">
+          {hazeView === 'plan' ? t('haze.notePlan', { aqi: air.aqi }) : t('haze.noteUsual', { aqi: air.aqi })}
+        </p>
+        <p>
+          {t('exposure.body', {
+            base: e.baseline,
+            plan: e.plan,
+            pct: e.reductionPct,
+            who: e.whoGuideline,
+            india: e.indiaStandard,
+          })}
+        </p>
         <Bars exposure={e} />
         <details>
           <summary>{t('exposure.how')}</summary>
@@ -155,8 +191,20 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
       </section>
 
       {translationNote ? <p className="results__english">{translationNote}</p> : null}
-      <ActionGroup title={t('group.routine')} items={plan.routine} topIds={top} offset={0} srcLang={srcLang} />
-      <ActionGroup title={t('group.indoor')} items={plan.indoor} topIds={top} offset={plan.routine.length} srcLang={srcLang} />
+      <ActionGroup
+        title={t('group.routine')}
+        items={plan.routine}
+        topIds={top}
+        offset={0}
+        srcLang={srcLang}
+      />
+      <ActionGroup
+        title={t('group.indoor')}
+        items={plan.indoor}
+        topIds={top}
+        offset={plan.routine.length}
+        srcLang={srcLang}
+      />
       <ActionGroup
         title={t('group.alternatives')}
         items={plan.alternatives}
@@ -166,7 +214,9 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
       />
 
       {plan.totals.co2SavedKgPerWeek > 0 ? (
-        <p className="totals">{t('co2.line', { week: plan.totals.co2SavedKgPerWeek, year: plan.totals.co2SavedKgPerYear })}</p>
+        <p className="totals">
+          {t('co2.line', { week: plan.totals.co2SavedKgPerWeek, year: plan.totals.co2SavedKgPerYear })}
+        </p>
       ) : null}
       <p className="disclaimer" lang={srcLang}>
         {result.disclaimer}

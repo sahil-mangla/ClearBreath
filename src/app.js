@@ -12,11 +12,13 @@ import { loadStatic, serveStatic } from './static.js';
 
 const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
-const methodNotAllowed = (allow) => new HttpError(405, 'Method not allowed.', { code: 'bad_method', headers: { Allow: allow } });
+const methodNotAllowed = (allow) =>
+  new HttpError(405, 'Method not allowed.', { code: 'bad_method', headers: { Allow: allow } });
 
 /**
  * Build the HTTP server (not yet listening). Dependencies are injectable for testing.
  * Pass `publicDir: null` to serve the API only (static hosting handled elsewhere, e.g. a CDN).
+ * @param {{env?:Record<string,string|undefined>, fetchImpl?:typeof fetch, now?:() => Date, publicDir?:string|null}} [options]
  */
 export function createApp({
   env = process.env,
@@ -87,7 +89,8 @@ export function createApp({
         return;
       }
       console.error(`[server] unexpected error: ${err?.message}`);
-      if (!res.headersSent) sendJson(res, 500, { error: 'Something went wrong on our side. Please try again.', code: 'server' });
+      if (!res.headersSent)
+        sendJson(res, 500, { error: 'Something went wrong on our side. Please try again.', code: 'server' });
     }
   });
 

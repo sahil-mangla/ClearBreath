@@ -23,10 +23,14 @@ async function request(path, { signal, ...options } = {}) {
     return data;
   } catch (err) {
     if (err.name === 'AbortError') {
-      if (timedOut) throw Object.assign(new Error('The request took too long. Please try again.'), { code: 'timeout' });
+      if (timedOut)
+        throw Object.assign(new Error('The request took too long. Please try again.'), { code: 'timeout' });
       throw err; // caller cancelled: let it through untouched
     }
-    if (err instanceof TypeError) throw Object.assign(new Error('Could not reach the server. Check your connection.'), { code: 'offline' });
+    if (err instanceof TypeError)
+      throw Object.assign(new Error('Could not reach the server. Check your connection.'), {
+        code: 'offline',
+      });
     throw err;
   } finally {
     clearTimeout(timer);

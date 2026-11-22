@@ -38,7 +38,9 @@ function ventilateAction({ w: forecast, polluted }) {
   return act(
     'i-ventilate',
     3,
-    forecast ? `Air the house briefly at ${fmtHour(forecast.bestHour)}` : 'Air the house briefly in the afternoon',
+    forecast
+      ? `Air the house briefly at ${fmtHour(forecast.bestHour)}`
+      : 'Air the house briefly in the afternoon',
     'Open windows for 10-15 minutes in the cleanest part of the day, then close up again. This clears cooking fumes and CO2 without letting in the worst air.',
     'Stops the stale-air build-up that comes from keeping everything closed all day.',
     { polluted: true, hour: forecast ? forecast.bestHour : null },

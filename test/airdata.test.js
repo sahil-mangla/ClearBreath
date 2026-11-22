@@ -6,7 +6,10 @@ const hours = (date, values, startHour = 0) =>
   values.map((pm25, i) => ({ time: `${date}T${String(startHour + i).padStart(2, '0')}:00`, pm25 }));
 
 test('bestWindow picks the cleanest and dirtiest daytime hour', () => {
-  const day = hours('2026-11-21', Array.from({ length: 24 }, (_, h) => (h === 15 ? 80 : h === 8 ? 300 : 200)));
+  const day = hours(
+    '2026-11-21',
+    Array.from({ length: 24 }, (_, h) => (h === 15 ? 80 : h === 8 ? 300 : 200)),
+  );
   const w = bestWindow(day, '2026-11-21T07:00');
   assert.equal(w.bestHour, 15);
   assert.equal(w.bestPm25, 80);
@@ -74,15 +77,20 @@ test('client de-duplicates concurrent requests for the same city', async () => {
 test('client rejects on upstream errors and on missing PM2.5', async () => {
   await assert.rejects(createAirClient({ fetchImpl: async () => ({ ok: false, status: 500 }) }).get('delhi'));
   await assert.rejects(
-    createAirClient({ fetchImpl: async () => upstream({ current: { time: 't', pm2_5: null } }) }).get('delhi'),
+    createAirClient({ fetchImpl: async () => upstream({ current: { time: 't', pm2_5: null } }) }).get(
+      'delhi',
+    ),
   );
 });
 
 test('when the upstream fails it serves the last good reading, labelled stale, for up to an hour', async () => {
   let t = 0;
   let down = false;
-  let calls = 0;
-  const client = createAirClient({ fetchImpl: async () => (calls++, down ? { ok: false, status: 503 } : upstream()), ttlMs: 1000, now: () => t });
+  const client = createAirClient({
+    fetchImpl: async () => (down ? { ok: false, status: 503 } : upstream()),
+    ttlMs: 1000,
+    now: () => t,
+  });
   const fresh = await client.get('delhi');
   down = true;
   t = 2000;
@@ -96,7 +104,10 @@ test('when the upstream fails it serves the last good reading, labelled stale, f
 test('an outage is remembered for 30 s so visitors do not each wait for the timeout', async () => {
   let t = 0;
   let calls = 0;
-  const client = createAirClient({ fetchImpl: async () => (calls++, { ok: false, status: 500 }), now: () => t });
+  const client = createAirClient({
+    fetchImpl: async () => (calls++, { ok: false, status: 500 }),
+    now: () => t,
+  });
   await assert.rejects(client.get('delhi'));
   await assert.rejects(client.get('delhi'));
   assert.equal(calls, 1, 'second request skipped the upstream');

@@ -45,7 +45,12 @@ function drawLandmark(ctx, m, rows) {
     ctx.fillRect(m.x + 2, base - m.h - 2, m.w - 4, 2);
     ctx.fillRect(m.x + 4, base - m.h - 3, m.w - 8, 1);
     const ow = Math.floor(m.w * 0.42);
-    ctx.clearRect(m.x + Math.floor((m.w - ow) / 2), base - Math.floor(m.h * 0.72), ow, Math.floor(m.h * 0.72));
+    ctx.clearRect(
+      m.x + Math.floor((m.w - ow) / 2),
+      base - Math.floor(m.h * 0.72),
+      ow,
+      Math.floor(m.h * 0.72),
+    );
   }
 }
 
@@ -58,7 +63,7 @@ export default function PixelCity({ city, density, still = false }) {
   const canvasRef = useRef(null);
   const reduced = usePrefersReducedMotion();
   const live = useRef({ density, city });
-  live.current = { density, city };
+  const redrawRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -86,7 +91,15 @@ export default function PixelCity({ city, density, still = false }) {
         ctx.fillStyle = color;
         ctx.globalAlpha = alpha;
         for (const b of layer.buildings) {
-          drawBuilding(ctx, b, sky.rows, seed + base, litAlpha ? (sd, x, y) => windowLit(sd, x, y, tick) : null, litAlpha, colors.lit);
+          drawBuilding(
+            ctx,
+            b,
+            sky.rows,
+            seed + base,
+            litAlpha ? (sd, x, y) => windowLit(sd, x, y, tick) : null,
+            litAlpha,
+            colors.lit,
+          );
         }
         ctx.globalAlpha = 1;
       };
@@ -110,7 +123,12 @@ export default function PixelCity({ city, density, still = false }) {
 
     const ro = new ResizeObserver(build);
     ro.observe(canvas);
-    const io = typeof IntersectionObserver === 'undefined' ? null : new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
+    const io =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(([entry]) => {
+            onScreen = entry.isIntersecting;
+          });
     io?.observe(canvas);
     build();
     if (!reduced && !still) {
@@ -120,7 +138,7 @@ export default function PixelCity({ city, density, still = false }) {
         render();
       }, TICK_MS);
     }
-    canvas.__redraw = () => {
+    redrawRef.current = () => {
       sky = makeSkyline(seedFor(live.current.city), canvas.width, canvas.height, live.current.city);
       render();
     };
@@ -133,7 +151,8 @@ export default function PixelCity({ city, density, still = false }) {
 
   // City or haze changed: rebuild the skyline for it and repaint.
   useEffect(() => {
-    canvasRef.current?.__redraw?.();
+    live.current = { density, city };
+    redrawRef.current?.();
   }, [city, density]);
 
   return <canvas ref={canvasRef} className="city" aria-hidden="true" />;

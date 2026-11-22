@@ -17,7 +17,10 @@ const STATIC_FILES = {
   '/base.css': ['base.css', 'text/css; charset=utf-8'],
   '/fonts/gloock-latin-400-normal.woff2': ['fonts/gloock-latin-400-normal.woff2', WOFF2],
   '/fonts/hanken-grotesk-latin-wght-normal.woff2': ['fonts/hanken-grotesk-latin-wght-normal.woff2', WOFF2],
-  '/fonts/hanken-grotesk-latin-ext-wght-normal.woff2': ['fonts/hanken-grotesk-latin-ext-wght-normal.woff2', WOFF2],
+  '/fonts/hanken-grotesk-latin-ext-wght-normal.woff2': [
+    'fonts/hanken-grotesk-latin-ext-wght-normal.woff2',
+    WOFF2,
+  ],
 };
 
 /** Read every static file once at start-up: bytes, ETag and (except fonts, already compressed) a gzip copy. */
@@ -38,7 +41,12 @@ export function serveStatic(file, req, res) {
   const etag = immutable ? null : gzip ? file.etag.replace(/"$/, '-gzip"') : file.etag;
 
   if (etag && req.headers['if-none-match'] === etag) {
-    res.writeHead(304, { ...SECURITY_HEADERS, 'Cache-Control': 'no-cache', ETag: etag, Vary: 'Accept-Encoding' });
+    res.writeHead(304, {
+      ...SECURITY_HEADERS,
+      'Cache-Control': 'no-cache',
+      ETag: etag,
+      Vary: 'Accept-Encoding',
+    });
     res.end();
     return;
   }

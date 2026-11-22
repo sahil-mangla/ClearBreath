@@ -64,7 +64,10 @@ test('function: /healthz and /api/cities answer, with the security headers', asy
 test('function: it serves the API only, so a page request is a clean 404 and bad input is rejected', async () => {
   assert.equal((await call('GET', '/')).status, 404);
   assert.equal((await call('GET', '/api/nope')).status, 404);
-  assert.equal((await call('POST', '/api/plan', { headers: { 'content-type': 'text/plain' }, body: 'x' })).status, 415);
+  assert.equal(
+    (await call('POST', '/api/plan', { headers: { 'content-type': 'text/plain' }, body: 'x' })).status,
+    415,
+  );
   assert.equal((await call('GET', '/api/plan')).status, 405);
 });
 

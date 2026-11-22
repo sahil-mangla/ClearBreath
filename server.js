@@ -11,6 +11,8 @@ const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST || '127.0.0.1';
 
 createApp().listen(port, host, () => {
-  const ai = process.env.GEMINI_API_KEY ? 'Gemini enabled' : 'no GEMINI_API_KEY: using built-in rules engine only';
+  const ai = process.env.GEMINI_API_KEY
+    ? 'Gemini enabled'
+    : 'no GEMINI_API_KEY: using built-in rules engine only';
   console.log(`ClearBreath running at http://${host}:${port} (${ai})`);
 });

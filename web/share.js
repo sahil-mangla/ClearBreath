@@ -15,7 +15,13 @@ export function planToText(result, lang = 'en') {
     '',
     briefing.text,
     '',
-    t('exposure.body', { base: e.baseline, plan: e.plan, pct: e.reductionPct, who: e.whoGuideline, india: e.indiaStandard }),
+    t('exposure.body', {
+      base: e.baseline,
+      plan: e.plan,
+      pct: e.reductionPct,
+      who: e.whoGuideline,
+      india: e.indiaStandard,
+    }),
   ];
   const groups = [
     ['group.routine', plan.routine],

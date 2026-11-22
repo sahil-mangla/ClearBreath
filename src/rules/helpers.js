@@ -26,7 +26,14 @@ export const round1 = (n) => Math.round(n * 10) / 10;
  * One recommendation. `p` holds the figures and variant flags the text was built from, so the built-in
  * Hindi catalogue (hi.js) can rebuild the same advice deterministically. It is stripped before the response.
  */
-export const act = (id, priority, title, detail, impact, p = {}) => ({ id, priority, title, detail, impact, p });
+export const act = (id, priority, title, detail, impact, p = {}) => ({
+  id,
+  priority,
+  title,
+  detail,
+  impact,
+  p,
+});
 
 /** The `n` highest-priority actions (lowest number first); ties keep their original order. */
 export const top = (list, n = 5) => [...list].sort((a, b) => a.priority - b.priority).slice(0, n);

@@ -21,7 +21,9 @@ const commuteHours = (profile) =>
 const percent = (ratio) => Math.round(ratio * 100);
 
 function describeAssumptions({ commuteH, profile, polluted, masked }) {
-  const baselineIndoor = percent(profile.hasPurifier ? INDOOR_RATIO.baselinePurifier : INDOOR_RATIO.baselineNone);
+  const baselineIndoor = percent(
+    profile.hasPurifier ? INDOOR_RATIO.baselinePurifier : INDOOR_RATIO.baselineNone,
+  );
   const planIndoor = percent(profile.hasPurifier ? INDOOR_RATIO.planPurifier : INDOOR_RATIO.planNone);
   const withPlan = polluted
     ? `With the plan: ${masked ? 'a fitted N95 outdoors (about 80% effective in real use), ' : ''}` +

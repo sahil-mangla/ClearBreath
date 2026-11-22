@@ -27,10 +27,30 @@ test('every plan the rules engine can produce has built-in Hindi with the same f
         for (const commute of ['bus_metro', 'car', 'auto_cab', 'two_wheeler', 'walk_cycle', 'wfh']) {
           for (const cooking of ['lpg', 'png', 'induction', 'biomass']) {
             for (const heating of ['none', 'electric', 'wood_coal']) {
-              for (const [children, seniors, conditions] of [[0, 0, []], [2, 0, ['asthma']], [0, 1, []], [1, 1, ['heart']]]) {
+              for (const [children, seniors, conditions] of [
+                [0, 0, []],
+                [2, 0, ['asthma']],
+                [0, 1, []],
+                [1, 1, ['heart']],
+              ]) {
                 for (const hasPurifier of [false, true]) {
                   for (const window of [null, WINDOW]) {
-                    const profile = { city: cityKey, adults: 2, children, seniors, conditions, commute, commuteKm: 12, cooking, heating, hasPurifier, hasN95: hasPurifier, lang: 'hi', notes: '', manualPm25: null };
+                    const profile = {
+                      city: cityKey,
+                      adults: 2,
+                      children,
+                      seniors,
+                      conditions,
+                      commute,
+                      commuteKm: 12,
+                      cooking,
+                      heating,
+                      hasPurifier,
+                      hasN95: hasPurifier,
+                      lang: 'hi',
+                      notes: '',
+                      manualPm25: null,
+                    };
                     const pm25 = [10, 40, 70, 120, 220, 400][levelIndex];
                     const plan = buildPlan({ levelIndex, pm25, profile, cityKey, window, now });
                     const exposure = estimateExposure({ pm25, profile, window });
@@ -41,7 +61,10 @@ test('every plan the rules engine can produce has built-in Hindi with the same f
                     assert.equal(hi.length, en.length, where);
                     hi.forEach((t, i) => {
                       assert.ok(hasDevanagari(t), `${where} #${i}: not Hindi: ${t}`);
-                      assert.ok(sameNumbers(en[i], t), `${where} #${i}: figures differ\n  en: ${en[i]}\n  hi: ${t}`);
+                      assert.ok(
+                        sameNumbers(en[i], t),
+                        `${where} #${i}: figures differ\n  en: ${en[i]}\n  hi: ${t}`,
+                      );
                       assert.ok(!/undefined|NaN|\{|\}/.test(t), `${where} #${i}: template leak: ${t}`);
                     });
                     plans += 1;
@@ -58,8 +81,30 @@ test('every plan the rules engine can produce has built-in Hindi with the same f
 });
 
 test('the last built-in string is the Hindi disclaimer, and builds are deterministic', () => {
-  const profile = { city: 'delhi', adults: 2, children: 1, seniors: 0, conditions: [], commute: 'car', commuteKm: 8, cooking: 'lpg', heating: 'none', hasPurifier: false, hasN95: false, lang: 'hi', notes: '', manualPm25: null };
-  const args = { levelIndex: 4, pm25: 220, profile, cityKey: 'delhi', window: WINDOW, now: new Date('2026-11-10T06:00:00Z') };
+  const profile = {
+    city: 'delhi',
+    adults: 2,
+    children: 1,
+    seniors: 0,
+    conditions: [],
+    commute: 'car',
+    commuteKm: 8,
+    cooking: 'lpg',
+    heating: 'none',
+    hasPurifier: false,
+    hasN95: false,
+    lang: 'hi',
+    notes: '',
+    manualPm25: null,
+  };
+  const args = {
+    levelIndex: 4,
+    pm25: 220,
+    profile,
+    cityKey: 'delhi',
+    window: WINDOW,
+    now: new Date('2026-11-10T06:00:00Z'),
+  };
   const a = buildPlan(args);
   const b = buildPlan(args);
   assert.deepEqual(a, b);
@@ -70,17 +115,48 @@ test('the last built-in string is the Hindi disclaimer, and builds are determini
 });
 
 test('applyTexts swaps text in order, keeps ids, and drops internal fields', () => {
-  const profile = { city: 'delhi', adults: 2, children: 0, seniors: 0, conditions: [], commute: 'wfh', commuteKm: 0, cooking: 'png', heating: 'electric', hasPurifier: true, hasN95: true, lang: 'hi', notes: '', manualPm25: null };
-  const plan = buildPlan({ levelIndex: 3, pm25: 120, profile, cityKey: 'delhi', window: WINDOW, now: new Date('2026-11-10T06:00:00Z') });
+  const profile = {
+    city: 'delhi',
+    adults: 2,
+    children: 0,
+    seniors: 0,
+    conditions: [],
+    commute: 'wfh',
+    commuteKm: 0,
+    cooking: 'png',
+    heating: 'electric',
+    hasPurifier: true,
+    hasN95: true,
+    lang: 'hi',
+    notes: '',
+    manualPm25: null,
+  };
+  const plan = buildPlan({
+    levelIndex: 3,
+    pm25: 120,
+    profile,
+    cityKey: 'delhi',
+    window: WINDOW,
+    now: new Date('2026-11-10T06:00:00Z'),
+  });
   const exposure = estimateExposure({ pm25: 120, profile, window: WINDOW });
   const english = publicText(plan, exposure, DISCLAIMER);
   assert.equal(english.disclaimer, DISCLAIMER);
-  assert.ok(english.plan.routine.every((a) => !('p' in a)), 'params are not exposed');
+  assert.ok(
+    english.plan.routine.every((a) => !('p' in a)),
+    'params are not exposed',
+  );
   assert.ok(english.plan.alerts.every((a) => !('key' in a)));
-  assert.deepEqual(english.plan.routine.map((a) => a.id), plan.routine.map((a) => a.id));
+  assert.deepEqual(
+    english.plan.routine.map((a) => a.id),
+    plan.routine.map((a) => a.id),
+  );
   assert.equal(english.plan.routine[0].title, plan.routine[0].title);
   const hi = applyTexts(plan, exposure, builtinTexts(plan, exposure));
-  assert.deepEqual(hi.plan.routine.map((a) => a.id), plan.routine.map((a) => a.id));
+  assert.deepEqual(
+    hi.plan.routine.map((a) => a.id),
+    plan.routine.map((a) => a.id),
+  );
   assert.ok(hasDevanagari(hi.plan.routine[0].title));
   assert.equal(hi.exposure.assumptions.length, exposure.assumptions.length);
   assert.equal(hi.disclaimer, DISCLAIMER_HI);

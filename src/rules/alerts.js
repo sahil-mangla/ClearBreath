@@ -7,7 +7,11 @@ const VERY_POOR_TEXT =
 
 function airAlert({ L, poor, vulnerable }) {
   if (L < 4 && !(poor && vulnerable)) return null;
-  return { key: L >= 5 ? 'severe' : 'verypoor', level: 'critical', text: L >= 5 ? SEVERE_TEXT : VERY_POOR_TEXT };
+  return {
+    key: L >= 5 ? 'severe' : 'verypoor',
+    level: 'critical',
+    text: L >= 5 ? SEVERE_TEXT : VERY_POOR_TEXT,
+  };
 }
 
 function carbonMonoxideAlert({ p }) {
