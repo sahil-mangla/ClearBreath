@@ -15,7 +15,8 @@ How the code is organised, and the checks that keep it that way. Run everything 
 | Domain | `src/aqi.js`, `cities.js`, `validate.js`, `hi.js`, `translate.js`, `llm.js`, `airdata.js`, `determinism.js`, `ratelimit.js` | Pure or injectable, each with its own test file |
 | | `src/llm/` | The Gemini client's parts: `prompts` (instructions, schemas, limits), `budget`, `cache`, `transport` (HTTP, retry, deadline). `llm.js` composes them and one `cachedGenerate` sequence serves all three calls |
 | | `src/limits.js` | The allowed form values and numeric ranges, shared by server validation and the form |
-| Front end | `web/` (React) | `App.jsx` (layout) with `TopBar.jsx` and `settings.js`, `usePlanRequest.js` (request queue, errors, result), `PlanForm.jsx` with `FormSections.jsx` and `FormFields.jsx`, `Results.jsx` with `ExposureSection.jsx`, `ActionGroup.jsx` and `Share.jsx`, `Smoke.jsx` over `smokeLoop.js` (animation) and `smokeSprites.js` (canvas drawing), pure helpers in `lib.js`; bundled to `public/app.js` |
+| | `src/replies.js`, `src/hi/` | The reply blocks and Gemini facts (`replies`); the Hindi catalogue split into `phrases` and `actions`, with `hi.js` applying it |
+| Front end | `web/` (React) | `App.jsx` (layout) with `TopBar.jsx` and `settings.js`, `usePlanRequest.js` (request queue, errors, result), `PlanForm.jsx` with `FormSections.jsx` and `FormFields.jsx`, `Results.jsx` with `ExposureSection.jsx`, `ActionGroup.jsx` and `Share.jsx`, `Smoke.jsx` over `smokeLoop.js` (animation) and `smokeSprites.js` (canvas drawing), `skyline.js`, `copy/en.js` and `copy/hi.js` (interface strings, key-for-key), `types.js` (JSDoc shapes), pure helpers in `lib.js`; bundled to `public/app.js` |
 | Tests | `test/backend/`, `test/web/`, `test/helpers/` | A test file per area (HTTP helpers, static serving, server, validation, rules, AQI, Hindi, Gemini client, front end); a golden test pins the whole rules engine |
 
 ## How the rules engine stays small
@@ -25,7 +26,8 @@ Each recommendation is a short function that takes one context object and return
 ## Enforced checks (all in CI)
 
 - `npm run lint`: oxlint with `--deny-warnings` (correctness errors, suspicious patterns, React hook rules). Currently zero findings.
-- `npm run typecheck`: `tsc` checks the server's JavaScript (`src/`, `server.js`, `api/`) against its JSDoc types with `strictNullChecks` on; the shared types (`PlanProfile`, `Action`, `PlanContext`) are documented in JSDoc. The React code in `web/` is covered by lint and tests, not by `tsc`. Currently zero errors.
+- `npm run structure`: `scripts/check-structure.mjs` fails if a file in `src/`, `web/`, `api/` or `server.js` is over 200 lines, or a line of code or comment is over 120 characters. Only prose copy (advice text, prompts, Hindi strings) may run longer, since a formatter cannot wrap it. The rules have their own tests.
+- `npm run typecheck`: `tsc` checks the server and the React front end (`src/`, `web/`, `server.js`, `api/`) against their JSDoc types with `strictNullChecks` on; the shared types are documented in JSDoc (`PlanProfile`, `Action`, `PlanContext` on the server, `web/types.js` for what the page receives). `noImplicitAny` is off: turning it on would need annotations on several hundred untyped parameters, which is left for later. Currently zero errors.
 - `npm run format:check`: Prettier, with `.editorconfig` for editors.
 - `npm test`: 153 tests (backend, validation, rules, determinism, components, deploy config).
 - `npm run test:browser`: 17 checks in real Chrome (layout, motion, contrast, keyboard, console errors).

@@ -1,7 +1,11 @@
 import { useTween } from './hooks.js';
 import { BANDS, SCALE_MAX } from './bands.js';
 import { useLang, useT } from './i18n.js';
+import { cssVars } from './lib.js';
 import { cityLabel, stateLabel } from './strings.js';
+
+/** @typedef {import('./types.js').City} City */
+/** @typedef {import('./types.js').LiveAir} LiveAir */
 
 const timeFmt = new Intl.DateTimeFormat('en-IN', {
   hour: 'numeric',
@@ -14,7 +18,10 @@ function observed(iso) {
   return Number.isNaN(d.getTime()) ? '' : `${timeFmt.format(d)} IST`;
 }
 
-/** The big live number: city picker, AQI that counts up into place, its category and the model source. */
+/**
+ * The big live number: city picker, AQI that counts up into place, its category and the model source.
+ * @param {{cities:City[], city:string, onCity:(key:string) => void, air:LiveAir, compact?:boolean}} props
+ */
 export default function Readout({ cities, city, onCity, air, compact }) {
   const t = useT();
   const lang = useLang();
@@ -100,7 +107,7 @@ export function BandScale({ aqi, levelIndex }) {
           </div>
         ))}
         {has ? (
-          <div className="scale__marker" style={{ '--p': pos }} aria-hidden="true">
+          <div className="scale__marker" style={cssVars({ '--p': pos })} aria-hidden="true">
             <span className="scale__tick" />
           </div>
         ) : null}

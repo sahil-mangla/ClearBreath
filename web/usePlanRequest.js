@@ -2,6 +2,11 @@ import { useCallback, useRef, useState } from 'react';
 import { postPlan } from './api.js';
 import { cityLabel, translate } from './strings.js';
 
+/** @typedef {import('./types.js').PlanResult} PlanResult */
+/** @typedef {import('./types.js').RequestErrors} RequestErrors */
+/** @typedef {import('./types.js').HazeView} HazeView */
+/** @typedef {import('./types.js').ApiError} ApiError */
+
 const num = (v) => (String(v).trim() === '' ? undefined : Number(v));
 
 /** The form's string values as the typed request the API expects. */
@@ -31,12 +36,12 @@ export function toRequest(v) {
  */
 export function usePlanRequest() {
   const [busy, setBusy] = useState(false);
-  const [errors, setErrors] = useState(null);
-  const [result, setResult] = useState(null);
-  const [hazeView, setHazeView] = useState('plan');
+  const [errors, setErrors] = useState(/** @type {RequestErrors|null} */ (null));
+  const [result, setResult] = useState(/** @type {PlanResult|null} */ (null));
+  const [hazeView, setHazeView] = useState(/** @type {HazeView} */ ('plan'));
   const [status, setStatus] = useState('');
   const running = useRef(false);
-  const queued = useRef(null);
+  const queued = useRef(/** @type {{values:any, focus:boolean}|null} */ (null));
   const moveFocus = useRef(false);
   const shouldFocus = useCallback(() => moveFocus.current, []);
 
@@ -55,7 +60,8 @@ export function usePlanRequest() {
       setResult(data);
       setHazeView('plan');
       setStatus(translate(values.lang, 'status.ready', { city: cityLabel(data.city, values.lang) }));
-    } catch (err) {
+    } catch (e) {
+      const err = /** @type {ApiError} */ (e);
       setStatus(translate(values.lang, 'status.failed'));
       setErrors({ code: err.code, message: err.message, details: err.details, fields: err.fields });
     } finally {

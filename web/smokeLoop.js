@@ -84,7 +84,7 @@ export function startSmoke(canvas, state, { page, lite }) {
   let last = 0;
   let lastDraw = 0;
   let t = 0;
-  let pointer = null;
+  let pointer = /** @type {{x:number, y:number}|null} */ (null);
   let onScreen = true; // band canvases below the fold stop animating until scrolled into view
 
   const stop = () => {

@@ -47,7 +47,9 @@ const AIR_TTL_MS = 120_000;
 
 /** Live reading for a city: {status: 'loading'|'ok'|'error', data, error}. */
 export function useLiveAir(city) {
-  const [state, setState] = useState({ status: 'loading', data: null, error: '' });
+  const [state, setState] = useState(
+    /** @type {import('./types.js').LiveAir} */ ({ status: 'loading', data: null, error: '' }),
+  );
   useEffect(() => {
     if (!city) return undefined;
     const hit = airCache.get(city);

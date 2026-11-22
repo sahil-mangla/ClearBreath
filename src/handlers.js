@@ -1,8 +1,9 @@
 import { CITIES, isCity } from './cities.js';
-import { computeAqi, HEALTH_IMPACT, HEALTH_IMPACT_HI, LEVELS } from './aqi.js';
+import { computeAqi } from './aqi.js';
 import { bestWindow } from './airdata.js';
 import { HttpError, readJson } from './http.js';
 import { applyTexts, builtinTexts, collectTexts, publicText } from './hi.js';
+import { airBlock, briefingFacts } from './replies.js';
 import { buildPlan, estimateExposure, fallbackBriefing, topActions, PM25_GUIDELINES } from './rules.js';
 import { translateTexts } from './translate.js';
 import { validateAskInput, validatePlanInput } from './validate.js';
@@ -11,61 +12,6 @@ const DISCLAIMER = 'General guidance, not medical advice. Impact figures are app
 
 const badInput = ({ errors, fields }) =>
   new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: errors, fields });
-
-/** The facts handed to Gemini: numbers and ids only, never free text from the user. */
-function briefingFacts({ cityName, profile, aqi, pm25, exposure, window, plan, actions }) {
-  return {
-    city: cityName,
-    lang: profile.lang,
-    aqi: {
-      value: aqi.value,
-      category: LEVELS[aqi.levelIndex],
-      dominantPollutant: aqi.dominant,
-      pm25: Math.round(pm25),
-    },
-    household: {
-      adults: profile.adults,
-      children: profile.children,
-      seniors: profile.seniors,
-      conditions: profile.conditions,
-      commute: profile.commute,
-      cooking: profile.cooking,
-      heating: profile.heating,
-    },
-    exposure: {
-      todayAsUsual: exposure.baseline,
-      withPlan: exposure.plan,
-      reductionPct: exposure.reductionPct,
-      whoGuideline: exposure.whoGuideline,
-      indiaStandard: exposure.indiaStandard,
-    },
-    cleanestOutdoorHour: window
-      ? { hour24: window.bestHour, pm25: window.bestPm25, day: window.bestDay }
-      : null,
-    co2SavedKgPerWeek: plan.totals.co2SavedKgPerWeek,
-    candidateActions: actions.map((a) => ({ id: a.id, title: a.title })),
-  };
-}
-
-/** The air block of a reply; `detail` adds the fields only the full plan needs. */
-function airBlock({ aqi, data, lang, detail }) {
-  const block = {
-    aqi: aqi.value,
-    category: aqi.category,
-    levelIndex: aqi.levelIndex,
-    dominant: aqi.dominant,
-    pm25: Math.round(data.pm25),
-    observedAt: data.time,
-    source: data.source,
-  };
-  if (!detail) return block;
-  return {
-    ...block,
-    pm10: data.pm10 === null ? null : Math.round(data.pm10),
-    healthImpact: (lang === 'hi' ? HEALTH_IMPACT_HI : HEALTH_IMPACT)[aqi.levelIndex],
-    note: 'Modelled estimate using India CPCB AQI bands; may differ from nearby CPCB station readings.',
-  };
-}
 
 /** The three endpoints that do real work. Dependencies are passed in so tests can fake them. */
 export function createHandlers({ air, llm, now }) {
@@ -207,7 +153,8 @@ export function createHandlers({ air, llm, now }) {
       const aqi = computeAqi(data);
       if (aqi) aqiFacts = { value: aqi.value, category: aqi.category, pm25: Math.round(data.pm25) };
     } catch (err) {
-      console.error(`[ask] answering without live air data: ${err?.message}`); // not fatal: the question can still be answered
+      // not fatal: the question can still be answered
+      console.error(`[ask] answering without live air data: ${err?.message}`);
     }
     const answer = await llm.answer({
       facts: { city: CITIES[cityKey].name, lang, aqi: aqiFacts, guidelines: PM25_GUIDELINES },

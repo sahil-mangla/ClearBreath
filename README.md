@@ -9,7 +9,7 @@ Winter smog guidance for Indian cities, in English and Hindi, with the impact of
 [![Deploy](https://img.shields.io/badge/CD-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/sahil-mangla/ClearBreath)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022-5fa04e?logo=nodedotjs&logoColor=white)
 ![Runtime dependencies](https://img.shields.io/badge/runtime%20dependencies-0-brightgreen)
-![Tests](https://img.shields.io/badge/tests-153%20unit%20%2B%2017%20browser-brightgreen)
+![Tests](https://img.shields.io/badge/tests-156%20unit%20%2B%2017%20browser-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.2%20AA%20target-blue)
 ![CSP](https://img.shields.io/badge/CSP-default--src%20none-blue)
 ![Gemini](https://img.shields.io/badge/GenAI-Gemini%20with%20rules%20fallback-8e75ff)
@@ -142,7 +142,7 @@ flowchart LR
   end
 ```
 
-- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request. It lints (oxlint, warnings fail), type-checks the server (`tsc` over JSDoc types), checks formatting (Prettier), builds, fails if the committed bundle differs from a fresh build of `web/`, then runs the unit suite and the real-browser smoke test.
+- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request. It lints (oxlint, warnings fail), checks file length and line width, type-checks the server and the front end (`tsc` over JSDoc types), checks formatting (Prettier), builds, fails if the committed bundle differs from a fresh build of `web/`, then runs the unit suite and the real-browser smoke test.
 - **CD** is Vercel's Git integration. The build command in `vercel.json` is `npm run build && npm test`, so a deploy that fails a test does not go live.
 - **Hosting.** `public/` is served from the CDN with the same security headers as the Node server (a test enforces that they match). `api/index.js` serves `/api/*` and `/healthz` in the Mumbai region (`bom1`) with a 30-second limit; behind Vercel the rate limiter keys on `X-Forwarded-For`.
 - **Configuration.** Set `GEMINI_API_KEY` (and optionally the variables above) in the Vercel project settings. Without a key the app serves the rules-engine answers.
@@ -160,7 +160,7 @@ Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.m
 
 - One job per module. The server is `http.js` (headers, errors, body parsing), `static.js` (assets, caching), `handlers.js` (the three endpoints) and `app.js` (routing only). The rules engine is one small file per concern under `src/rules/` (routine, indoor, alternatives, alerts, exposure, briefing), each action a short function.
 - Pure functions for the rules, the AQI maths, the validators and the Hindi catalogue, so the logic is testable without a server or a network.
-- Enforced in CI: `oxlint --deny-warnings`, `tsc` over the server's JSDoc types, Prettier, then the tests. `npm run check` runs all of them locally.
+- Enforced in CI: `oxlint --deny-warnings`, `tsc` over the JSDoc types of the server and the front end, a structure check (200 lines per file, 120 columns), Prettier, then the tests. `npm run check` runs all of them locally.
 - One definition of shared facts (AQI bands, language list, mask rule) rather than a copy on each side.
 - Zero runtime dependencies on the server. The front end is bundled once and committed.
 - English and Hindi plan text are kept in step by a test that checks identical keys and placeholders.

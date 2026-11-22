@@ -18,7 +18,8 @@ const methodNotAllowed = (allow) =>
 /**
  * Build the HTTP server (not yet listening). Dependencies are injectable for testing.
  * Pass `publicDir: null` to serve the API only (static hosting handled elsewhere, e.g. a CDN).
- * @param {{env?:Record<string,string|undefined>, fetchImpl?:typeof fetch, now?:() => Date, publicDir?:string|null}} [options]
+ * @param {{env?:Record<string,string|undefined>, fetchImpl?:typeof fetch, now?:() => Date,
+ *   publicDir?:string|null}} [options]
  */
 export function createApp({
   env = process.env,

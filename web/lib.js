@@ -1,5 +1,9 @@
 // Pure helpers for the front end (no DOM, no React) so they can be unit-tested in Node.
 
+/** Custom properties (`--i`) in a React style object, which its CSSProperties type does not allow. */
+/** @param {Record<string, string|number>} vars @returns {import('react').CSSProperties} */
+export const cssVars = (vars) => vars;
+
 export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 /** Deterministic 0..1 hash (mulberry32 step). Same input, same output: no flicker between renders. */
@@ -13,7 +17,7 @@ export function hash(n) {
 /** Stable integer seed from a string (city key etc). */
 export function seedFor(str) {
   let h = 2166136261;
-  for (const ch of String(str ?? '')) h = Math.imul(h ^ ch.codePointAt(0), 16777619);
+  for (const ch of String(str ?? '')) h = Math.imul(h ^ (ch.codePointAt(0) ?? 0), 16777619);
   return h >>> 0;
 }
 
@@ -67,7 +71,14 @@ export const SMOKE_LAYERS = Object.freeze([
   { count: 7, size: [0.22, 0.42], speed: [0.036, 0.055], alpha: 0.8 },
 ]);
 
-/** Puffs in normalised 0..1 space; `s` is size as a fraction of the canvas's longer side. */
+/**
+ * One cloud, in normalised 0..1 space: position, size `s` (a fraction of the canvas's longer side), drift,
+ * spin, which tone and sprite it uses, and the pointer's push offset (`ox`, `oy`).
+ * @typedef {{layer:number, x:number, y:number, s:number, vx:number, phase:number, rot:number, vr:number,
+ *   tone:number, shape:number, ox:number, oy:number}} Puff
+ */
+
+/** @returns {Puff[]} */
 export function makePuffs(seed = 7) {
   const puffs = [];
   let i = 0;
@@ -96,7 +107,7 @@ export function makePuffs(seed = 7) {
 /**
  * Advance one puff by dt seconds: wind drift left to right, a slow vertical bob and spin, wrap-around
  * once fully off-screen, and a spring-back offset that lets the pointer part the cloud.
- * @param {object} p puff (mutated)
+ * @param {Puff} p puff (mutated)
  * @param {number} t seconds since start
  * @param {{x:number,y:number}|null} pointer normalised
  */
@@ -125,64 +136,8 @@ export function stepPuff(p, t, dt, pointer) {
 }
 
 /* ------------------------------------------------------------------ *
- * Pixel city: a deterministic skyline in three layers.                 *
+ * Pixel city window lights (the skyline itself is in skyline.js).     *
  * ------------------------------------------------------------------ */
-
-const LANDMARKS = Object.freeze({
-  delhi: [
-    { type: 'minar', at: 0.18 },
-    { type: 'gate', at: 0.64 },
-  ],
-  mumbai: [{ type: 'gate', at: 0.5 }],
-});
-
-const SKYLINE_LAYERS = Object.freeze([
-  { name: 'far', hMin: 0.25, hMax: 0.55, wMin: 5, wMax: 10, gap: [0, 1] },
-  { name: 'mid', hMin: 0.3, hMax: 0.68, wMin: 6, wMax: 12, gap: [0, 2] },
-  { name: 'near', hMin: 0.22, hMax: 0.62, wMin: 8, wMax: 15, gap: [1, 3] },
-]);
-
-/**
- * @param {number} seed
- * @param {number} cols pixels across
- * @param {number} rows pixels tall
- * @param {string} [cityKey] picks landmarks
- * @returns {{cols:number, rows:number, layers:{name:string, buildings:{x:number,w:number,h:number,roof:'flat'|'step'|'spire'}[]}[], landmarks:{type:string,x:number,w:number,h:number}[]}}
- */
-export function makeSkyline(seed, cols, rows, cityKey) {
-  const layers = SKYLINE_LAYERS.map((L, li) => {
-    const buildings = [];
-    let x = 0;
-    let n = 0;
-    while (x < cols) {
-      const r = (k) => hash(seed * 13 + li * 1009 + n * 17 + k);
-      const w = Math.min(cols - x, L.wMin + Math.floor(r(1) * (L.wMax - L.wMin + 1)));
-      const h = Math.max(4, Math.round(rows * (L.hMin + r(2) * (L.hMax - L.hMin))));
-      const roof = r(3) > 0.78 ? 'spire' : r(3) > 0.5 ? 'step' : 'flat';
-      buildings.push({ x, w, h, roof });
-      x += w + L.gap[0] + Math.floor(r(4) * (L.gap[1] - L.gap[0] + 1));
-      n += 1;
-    }
-    return { name: L.name, buildings };
-  });
-
-  const landmarks = (LANDMARKS[cityKey] ?? []).map(({ type, at }) =>
-    type === 'minar'
-      ? {
-          type,
-          x: Math.round(cols * at),
-          w: Math.max(5, Math.round(rows * 0.11)),
-          h: Math.round(rows * 0.82),
-        }
-      : {
-          type,
-          x: Math.round(cols * at),
-          w: Math.max(14, Math.round(rows * 0.3)),
-          h: Math.round(rows * 0.34),
-        },
-  );
-  return { cols, rows, layers, landmarks };
-}
 
 /** Whether the window at (x, y) of a building is lit; `tick` flips a few of them over time. */
 export function windowLit(seed, x, y, tick = 0) {

@@ -15,7 +15,9 @@ jobs:
       - run: npm ci
       - name: Lint (oxlint, warnings fail the build)
         run: npm run lint
-      - name: Type-check the server (tsc over JSDoc types)
+      - name: Structure (file length and line width)
+        run: npm run structure
+      - name: Type-check server and front end (tsc over JSDoc types)
         run: npm run typecheck
       - name: Formatting (Prettier)
         run: npm run format:check

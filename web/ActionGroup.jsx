@@ -1,4 +1,5 @@
 import { useLang, useT } from './i18n.js';
+import { cssVars } from './lib.js';
 
 /** One list of recommended actions. `topIds` marks the briefing's top picks; `offset` staggers the entrance. */
 export default function ActionGroup({ title, items, topIds, offset, srcLang }) {
@@ -12,7 +13,11 @@ export default function ActionGroup({ title, items, topIds, offset, srcLang }) {
         {items.map((a, i) => {
           const isTop = topIds.includes(a.id);
           return (
-            <li className={`act${isTop ? ' act--top' : ''}`} key={a.id} style={{ '--i': offset + i }}>
+            <li
+              className={`act${isTop ? ' act--top' : ''}`}
+              key={a.id}
+              style={cssVars({ '--i': offset + i })}
+            >
               <h4>
                 {a.title}
                 {isTop ? (

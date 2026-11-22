@@ -4,7 +4,7 @@
 import { CONDITION_ADVICE, CONDITION_ORDER } from './constants.js';
 import { act, fmtHour, needsMask } from './helpers.js';
 
-/** Daily-routine actions. Each builder takes the plan context and returns one action, or null when it does not apply. */
+/** Daily-routine actions. Each builder takes the plan context and returns one action, or null if none applies. */
 
 function windowAction({ pm25, forecast, polluted }) {
   if (!forecast || !polluted) return null;

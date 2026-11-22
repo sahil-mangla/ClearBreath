@@ -6,6 +6,9 @@ import Share from './Share.jsx';
 import SmogText from './SmogText.jsx';
 import { cityLabel } from './strings.js';
 
+/** @typedef {import('./types.js').PlanResult} PlanResult */
+/** @typedef {import('./types.js').HazeView} HazeView */
+
 function Alerts({ alerts, srcLang }) {
   const t = useT();
   return alerts.map((a) => (
@@ -42,56 +45,62 @@ function ActionGroups({ plan, topIds, srcLang }) {
 }
 
 /** The plan: headline, alerts, briefing, exposure with the haze-view switch, then the action lists. */
-const Results = forwardRef(function Results({ result, hazeView, onHazeView, density }, ref) {
-  const t = useT();
-  const lang = useLang();
-  const { air, plan, briefing } = result;
-  const srcLang = result.textLang; // the language the server wrote the plan, alerts, assumptions and disclaimer in
-  const translationNote = result.translation ? t(`translation.${result.translation}`) : '';
+const Results = forwardRef(
+  /**
+   * @param {{result:PlanResult, hazeView:HazeView, onHazeView:(view:HazeView) => void, density:number}} props
+   * @param {import('react').ForwardedRef<HTMLHeadingElement>} ref
+   */
+  function Results({ result, hazeView, onHazeView, density }, ref) {
+    const t = useT();
+    const lang = useLang();
+    const { air, plan, briefing } = result;
+    const srcLang = result.textLang; // the language the server wrote the plan, alerts, assumptions and disclaimer in
+    const translationNote = result.translation ? t(`translation.${result.translation}`) : '';
 
-  return (
-    <div className="results">
-      <h2 ref={ref} tabIndex={-1} className="results__title">
-        <SmogText
-          key={`${result.city.name}-${lang}`}
-          text={t('results.title', { city: cityLabel(result.city, lang) })}
-          density={density}
-          salt={3}
-        />
-      </h2>
+    return (
+      <div className="results">
+        <h2 ref={ref} tabIndex={-1} className="results__title">
+          <SmogText
+            key={`${result.city.name}-${lang}`}
+            text={t('results.title', { city: cityLabel(result.city, lang) })}
+            density={density}
+            salt={3}
+          />
+        </h2>
 
-      <p className="results__air">
-        <strong className="results__aqi num" data-level={air.levelIndex}>
-          {t('results.aqi', { aqi: air.aqi, cat: t(`band.${air.levelIndex}`) })}
-        </strong>{' '}
-        <span lang={lang}>{air.healthImpact}</span>
-      </p>
+        <p className="results__air">
+          <strong className="results__aqi num" data-level={air.levelIndex}>
+            {t('results.aqi', { aqi: air.aqi, cat: t(`band.${air.levelIndex}`) })}
+          </strong>{' '}
+          <span lang={lang}>{air.healthImpact}</span>
+        </p>
 
-      <Alerts alerts={plan.alerts} srcLang={srcLang} />
+        <Alerts alerts={plan.alerts} srcLang={srcLang} />
 
-      <div className="briefing">
-        <p lang={briefing.lang}>{briefing.text}</p>
-        <p className="briefing__source">
-          {briefing.source === 'gemini' ? t('briefing.gemini') : t('briefing.rules')}
+        <div className="briefing">
+          <p lang={briefing.lang}>{briefing.text}</p>
+          <p className="briefing__source">
+            {briefing.source === 'gemini' ? t('briefing.gemini') : t('briefing.rules')}
+          </p>
+        </div>
+
+        <Share result={result} />
+        <ExposureSection result={result} hazeView={hazeView} onHazeView={onHazeView} />
+
+        {translationNote ? <p className="results__english">{translationNote}</p> : null}
+        <ActionGroups plan={plan} topIds={briefing.topActionIds} srcLang={srcLang} />
+
+        {plan.totals.co2SavedKgPerWeek > 0 ? (
+          <p className="totals">
+            {t('co2.line', { week: plan.totals.co2SavedKgPerWeek, year: plan.totals.co2SavedKgPerYear })}
+          </p>
+        ) : null}
+        <p className="disclaimer" lang={srcLang}>
+          {result.disclaimer}
         </p>
       </div>
-
-      <Share result={result} />
-      <ExposureSection result={result} hazeView={hazeView} onHazeView={onHazeView} />
-
-      {translationNote ? <p className="results__english">{translationNote}</p> : null}
-      <ActionGroups plan={plan} topIds={briefing.topActionIds} srcLang={srcLang} />
-
-      {plan.totals.co2SavedKgPerWeek > 0 ? (
-        <p className="totals">
-          {t('co2.line', { week: plan.totals.co2SavedKgPerWeek, year: plan.totals.co2SavedKgPerYear })}
-        </p>
-      ) : null}
-      <p className="disclaimer" lang={srcLang}>
-        {result.disclaimer}
-      </p>
-    </div>
-  );
-});
+    );
+  },
+);
 
 export default Results;

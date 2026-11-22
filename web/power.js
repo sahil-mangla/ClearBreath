@@ -10,7 +10,7 @@ export function isLowPower(nav = {}, search = '') {
   if (fx === 'lite') return true;
   if (fx === 'full') return false;
   if (nav.connection?.saveData) return true;
-  if (Number.isFinite(nav.deviceMemory) && nav.deviceMemory <= 4) return true;
-  if (Number.isFinite(nav.hardwareConcurrency) && nav.hardwareConcurrency <= 4) return true;
+  if (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) return true;
+  if (nav.hardwareConcurrency !== undefined && nav.hardwareConcurrency <= 4) return true;
   return false;
 }

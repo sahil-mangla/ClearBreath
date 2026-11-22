@@ -1,4 +1,4 @@
-/** Everything the model is told: the system prompts, the task instructions, the response schemas and the size limits. */
+/** Everything the model is told: system prompts, task instructions, response schemas and size limits. */
 
 export const BRIEFING_MAX_WORDS = 110;
 export const ANSWER_MAX_WORDS = 120;

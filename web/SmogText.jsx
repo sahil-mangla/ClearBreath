@@ -1,11 +1,15 @@
 import { Fragment, useMemo, useState } from 'react';
-import { letterTiming, splitWords } from './lib.js';
+import { cssVars, letterTiming, splitWords } from './lib.js';
 
 /**
  * Text that resolves out of smog: each letter starts blurred, faint and slightly displaced, then
  * sharpens on its own stagger. Thicker air (higher `density`) starts blurrier.
  * Screen readers get the plain string; the animated letters are hidden from them.
  * Remount (change `key`) to replay. Under reduced motion CSS shows the text at rest.
+ */
+/**
+ * @param {{text:string, as?:import('react').ElementType, density?:number, className?:string, lang?:string,
+ *   salt?:number}} props
  */
 export default function SmogText({ text, as: Tag = 'span', density = 0.4, className = '', lang, salt = 1 }) {
   const words = useMemo(
@@ -30,7 +34,7 @@ export default function SmogText({ text, as: Tag = 'span', density = 0.4, classN
                   <span
                     className="smog__l"
                     key={k}
-                    style={{ '--d': `${t.delay}ms`, '--b': `${t.blur}px`, '--y': `${t.rise}px` }}
+                    style={cssVars({ '--d': `${t.delay}ms`, '--b': `${t.blur}px`, '--y': `${t.rise}px` })}
                   >
                     {ch}
                   </span>

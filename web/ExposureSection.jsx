@@ -1,4 +1,5 @@
 import { useT } from './i18n.js';
+import { cssVars } from './lib.js';
 
 function Bars({ exposure: e }) {
   const t = useT();
@@ -15,7 +16,7 @@ function Bars({ exposure: e }) {
           <span className="bars__track" aria-hidden="true">
             <span
               className={`bars__fill bars__fill--${kind}`}
-              style={{ '--p': Math.max(0.02, value / max) }}
+              style={cssVars({ '--p': Math.max(0.02, value / max) })}
             />
           </span>
           <strong className="bars__value num">{value} µg/m³</strong>

@@ -13,7 +13,7 @@ import { errorMessage } from './strings.js';
 /** The summary that appears after a failed submit. Focus moves here so keyboard and screen-reader users land on it. */
 function ErrorSummary({ errors }) {
   const lang = useLang();
-  const ref = useRef(null);
+  const ref = useRef(/** @type {HTMLDivElement|null} */ (null));
   useEffect(() => {
     if (errors) ref.current?.focus();
   }, [errors]);

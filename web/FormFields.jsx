@@ -58,6 +58,9 @@ export function PickField({ id, label, options, prefix, form }) {
   );
 }
 
+/**
+ * @param {{checked:boolean, onChange:(on:boolean) => void, children?:any, name:string, value?:string}} props
+ */
 export function Check({ checked, onChange, children, name, value }) {
   return (
     <label className="check">

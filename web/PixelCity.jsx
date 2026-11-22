@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { usePrefersReducedMotion } from './hooks.js';
-import { clamp, makeSkyline, seedFor, windowLit } from './lib.js';
+import { clamp, seedFor, windowLit } from './lib.js';
+import { makeSkyline } from './skyline.js';
 
 const PIXEL = 5; // CSS pixels per art pixel
 const TICK_MS = 1400; // windows flicker slowly, at a few frames per second at most
@@ -60,32 +61,33 @@ function drawLandmark(ctx, m, rows) {
  * Windows glow amber and a few flicker. Decorative only.
  */
 export default function PixelCity({ city, density, still = false }) {
-  const canvasRef = useRef(null);
+  const canvasRef = useRef(/** @type {HTMLCanvasElement|null} */ (null));
   const reduced = usePrefersReducedMotion();
   const live = useRef({ density, city });
-  const redrawRef = useRef(null);
+  const redrawRef = useRef(/** @type {(() => void)|null} */ (null));
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return undefined;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return undefined;
     const colors = {
       far: token('--haze-smoke'),
       mid: token('--color-paper-3'),
       near: token('--color-paper'),
       lit: token('--color-accent'),
     };
-    let sky = null;
+    let sky = /** @type {import('./skyline.js').Skyline|null} */ (null);
     let tick = 0;
     let timer = 0;
     let onScreen = true;
 
     const render = () => {
-      if (!sky) return;
+      const current = sky;
+      if (!current) return;
       const { density: d, city: key } = live.current;
       const seed = seedFor(key);
-      ctx.clearRect(0, 0, sky.cols, sky.rows);
-      const [far, mid, near] = sky.layers;
+      ctx.clearRect(0, 0, current.cols, current.rows);
+      const [far, mid, near] = current.layers;
       // Far towers vanish into thick smog; mid ones dim; the near row stays solid.
       const draw = (layer, color, alpha, litAlpha, base) => {
         ctx.fillStyle = color;
@@ -94,7 +96,7 @@ export default function PixelCity({ city, density, still = false }) {
           drawBuilding(
             ctx,
             b,
-            sky.rows,
+            current.rows,
             seed + base,
             litAlpha ? (sd, x, y) => windowLit(sd, x, y, tick) : null,
             litAlpha,
@@ -108,7 +110,7 @@ export default function PixelCity({ city, density, still = false }) {
       ctx.fillStyle = colors.near;
       draw(near, colors.near, 1, 0.9, 3);
       ctx.fillStyle = colors.near;
-      for (const m of sky.landmarks) drawLandmark(ctx, m, sky.rows);
+      for (const m of current.landmarks) drawLandmark(ctx, m, current.rows);
       ctx.globalAlpha = 1;
     };
 

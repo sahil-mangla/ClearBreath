@@ -7,7 +7,7 @@ const LANG_KEY = 'clearbreath.lang';
 export function storedLang() {
   try {
     const v = localStorage.getItem(LANG_KEY);
-    return LANGS.includes(v) ? v : 'en';
+    return v && LANGS.includes(v) ? v : 'en';
   } catch {
     return 'en'; // storage can be blocked; the page works without it
   }

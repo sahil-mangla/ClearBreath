@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCities } from './api.js';
 import AskPanel from './AskPanel.jsx';
 import { usePrefersReducedMotion, useLiveAir, useLowPower } from './hooks.js';
-import { LangContext } from './i18n.js';
+import { LangContext, useTranslator } from './i18n.js';
 import { clearedDensity, densityFor } from './lib.js';
 import PixelCity from './PixelCity.jsx';
 import PlanForm from './PlanForm.jsx';
@@ -13,7 +13,7 @@ import Smoke from './Smoke.jsx';
 import SmogText from './SmogText.jsx';
 import TopBar from './TopBar.jsx';
 import { DEFAULTS, saveLang, storedLang } from './settings.js';
-import { cityLabel, translate } from './strings.js';
+import { cityLabel } from './strings.js';
 import { usePlanRequest } from './usePlanRequest.js';
 
 const FALLBACK_CITIES = [{ key: 'delhi', name: 'Delhi', state: 'Delhi' }];
@@ -26,10 +26,10 @@ export default function App() {
   const [cities, setCities] = useState(FALLBACK_CITIES);
   const [values, setValues] = useState(() => ({ ...DEFAULTS, lang: storedLang() }));
   const { busy, errors, result, status, hazeView, setHazeView, shouldFocus, build, reset } = usePlanRequest();
-  const resultsRef = useRef(null);
+  const resultsRef = useRef(/** @type {HTMLHeadingElement|null} */ (null));
   const air = useLiveAir(values.city);
   const lang = values.lang;
-  const t = useCallback((key, vars) => translate(lang, key, vars), [lang]);
+  const t = useTranslator(lang); // App renders the provider, so it cannot read the language from context
 
   useEffect(() => {
     getCities()
@@ -65,7 +65,8 @@ export default function App() {
     saveLang(next);
     const nextValues = { ...values, lang: next };
     setValues(nextValues);
-    if (result) build(nextValues, { focus: false }); // rebuilding in the new language must not pull focus away from the toggle
+    // rebuilding in the new language must not pull focus away from the toggle
+    if (result) build(nextValues, { focus: false });
   };
 
   // Bring a fresh plan into view and move focus to its heading.
@@ -152,7 +153,7 @@ export default function App() {
 
             {result ? (
               <section className="panel panel--results" aria-label={t('results.aria')}>
-                {/* Squared so a modelled cut reads clearly in this small strip (the full-page haze keeps the plain scale). */}
+                {/* Squared so a modelled cut reads clearly in this small strip (page haze: plain scale). */}
                 {lowPower ? null : (
                   <Smoke variant="band" className="results__smoke" density={density ** 2} paused={paused} />
                 )}

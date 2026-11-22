@@ -8,7 +8,6 @@ import {
   hash,
   letterTiming,
   makePuffs,
-  makeSkyline,
   seedFor,
   SMOKE_LAYERS,
   splitWords,
@@ -16,6 +15,7 @@ import {
   windowLit,
   withAlpha,
 } from '../../web/lib.js';
+import { makeSkyline } from '../../web/skyline.js';
 
 test('densityFor rises with AQI, stays in 0.08..1 and tolerates bad input', () => {
   assert.equal(densityFor(0), 0.08);

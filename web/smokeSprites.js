@@ -10,7 +10,7 @@ export function buildSprite(color, seed) {
   const c = document.createElement('canvas');
   c.width = SPRITE;
   c.height = SPRITE;
-  const g = c.getContext('2d');
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
   for (let i = 0; i < 26; i += 1) {
     const a = hash(seed * 31 + i * 7) * Math.PI * 2;
     const d = Math.sqrt(hash(seed * 17 + i * 13)) * SPRITE * 0.3;
@@ -37,7 +37,7 @@ export function buildGrain() {
   const c = document.createElement('canvas');
   c.width = 96;
   c.height = 96;
-  const g = c.getContext('2d');
+  const g = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d'));
   const img = g.createImageData(96, 96);
   for (let i = 0; i < img.data.length; i += 4) {
     const v = hash(i * 3 + 11) > 0.5 ? 255 : 0;

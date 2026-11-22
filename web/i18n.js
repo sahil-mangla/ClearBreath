@@ -5,8 +5,14 @@ export const LangContext = createContext('en');
 
 export const useLang = () => useContext(LangContext);
 
-/** `t(key, vars)` in the current interface language. */
-export function useT() {
-  const lang = useLang();
-  return useCallback((key, vars) => translate(lang, key, vars), [lang]);
+/** `t(key, vars)` in the given interface language. */
+export function useTranslator(lang) {
+  return useCallback(
+    /** @param {string} key @param {Record<string, string|number>} [vars] */
+    (key, vars) => translate(lang, key, vars),
+    [lang],
+  );
 }
+
+/** `t(key, vars)` in the current interface language, for components inside the provider. */
+export const useT = () => useTranslator(useLang());

@@ -9,7 +9,8 @@
     "strict": false,
     "strictNullChecks": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "jsx": "react-jsx"
   },
-  "include": ["src", "server.js", "api"]
+  "include": ["src", "web", "server.js", "api"]
 }
