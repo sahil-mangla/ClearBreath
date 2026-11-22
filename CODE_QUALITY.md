@@ -26,7 +26,7 @@ Each recommendation is a short function that takes one context object and return
 - `npm run lint`: oxlint with `--deny-warnings` (correctness errors, suspicious patterns, React hook rules). Currently zero findings.
 - `npm run typecheck`: `tsc` checks the server's JavaScript (`src/`, `server.js`, `api/`) against its JSDoc types with `strictNullChecks` on; the shared types (`PlanProfile`, `Action`, `PlanContext`) are documented in JSDoc. The React code in `web/` is covered by lint and tests, not by `tsc`. Currently zero errors.
 - `npm run format:check`: Prettier, with `.editorconfig` for editors.
-- `npm test`: 141 tests (backend, validation, rules, determinism, components, deploy config).
+- `npm test`: 150 tests (backend, validation, rules, determinism, components, deploy config).
 - `npm run test:browser`: 17 checks in real Chrome (layout, motion, contrast, keyboard, console errors).
 
 ## Conventions
