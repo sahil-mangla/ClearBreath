@@ -248,7 +248,7 @@ test('invalid input returns 400 with field messages', async () => {
   assert.equal(res.status, 400);
   const j = await res.json();
   assert.ok(j.details.length >= 2);
-  assert.deepEqual(j.fields, ['adults'], 'the response names the offending form field');
+  assert.deepEqual(j.fields, ['city', 'adults'], 'the response names every offending field');
 });
 
 test('malformed JSON, wrong content type, oversized body and wrong method are rejected', async () => {

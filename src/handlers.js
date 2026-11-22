@@ -5,16 +5,12 @@ import { HttpError, readJson } from './http.js';
 import { applyTexts, builtinTexts, collectTexts, publicText } from './hi.js';
 import { buildPlan, estimateExposure, fallbackBriefing, topActions, PM25_GUIDELINES } from './rules.js';
 import { translateTexts } from './translate.js';
-import { fieldsOf, validateAskInput, validatePlanInput } from './validate.js';
+import { validateAskInput, validatePlanInput } from './validate.js';
 
 const DISCLAIMER = 'General guidance, not medical advice. Impact figures are approximate estimates.';
 
-const badInput = (errors) =>
-  new HttpError(400, 'Please fix the highlighted inputs.', {
-    code: 'bad_input',
-    details: errors,
-    fields: fieldsOf(errors),
-  });
+const badInput = ({ errors, fields }) =>
+  new HttpError(400, 'Please fix the highlighted inputs.', { code: 'bad_input', details: errors, fields });
 
 /** The facts handed to Gemini: numbers and ids only, never free text from the user. */
 function briefingFacts({ cityName, profile, aqi, pm25, exposure, window, plan, actions }) {
@@ -132,7 +128,7 @@ export function createHandlers({ air, llm, now }) {
 
   async function plan(req, res) {
     const parsed = validatePlanInput(await readJson(req, res));
-    if (!parsed.ok) throw badInput(parsed.errors);
+    if (!parsed.ok) throw badInput(parsed);
     const profile = parsed.value;
     const city = CITIES[profile.city];
     const cityName = profile.lang === 'hi' ? city.nameHi : city.name; // the name as written in the reply language
@@ -194,7 +190,7 @@ export function createHandlers({ air, llm, now }) {
 
   async function ask(req, res) {
     const parsed = validateAskInput(await readJson(req, res));
-    if (!parsed.ok) throw badInput(parsed.errors);
+    if (!parsed.ok) throw badInput(parsed);
     if (!llm.enabled) {
       throw new HttpError(
         503,

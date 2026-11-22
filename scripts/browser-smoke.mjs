@@ -79,7 +79,7 @@ await until(async () => (await fetch(`${BASE}healthz`)).ok, 8000, 'the server');
 const targets = await until(
   async () =>
     (await (await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/list`)).json()).find((t) => t.type === 'page'),
-  10000,
+  30000, // a cold CI runner can take over ten seconds to open the first page
   'Chrome',
 );
 const ws = new WebSocket(targets.webSocketDebuggerUrl);

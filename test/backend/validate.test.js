@@ -69,8 +69,7 @@ test('validateAskInput requires a real question and a supported city', () => {
   assert.equal(validateAskInput({ city: 'delhi', question: 'hello', lang: 'fr' }).ok, false);
 });
 
-test('fieldsOf maps validation messages to form field ids, longest label first', async () => {
-  const { fieldsOf } = await import('../../src/validate.js');
+test('each problem names the form field it is about, so the page can mark it invalid', () => {
   const bad = validatePlanInput({
     city: 'delhi',
     adults: 99,
@@ -78,6 +77,8 @@ test('fieldsOf maps validation messages to form field ids, longest label first',
     commute: 'jetpack',
     manualPm25: 5000,
   });
-  assert.deepEqual(fieldsOf(bad.errors).sort(), ['adults', 'commute', 'commuteKm', 'manualPm25']);
-  assert.deepEqual(fieldsOf(['Please choose a supported city.']), []);
+  assert.deepEqual([...bad.fields].sort(), ['adults', 'commute', 'commuteKm', 'manualPm25']);
+  assert.equal(bad.errors.length, 4);
+  assert.deepEqual(validatePlanInput({ city: 'nowhere' }).fields, ['city']);
+  assert.deepEqual(validateAskInput({ city: 'delhi', question: ' ' }).fields, ['question']);
 });
