@@ -1,108 +1,53 @@
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
+import ActionGroup from './ActionGroup.jsx';
+import ExposureSection from './ExposureSection.jsx';
 import { useLang, useT } from './i18n.js';
-import { cityLabel } from './strings.js';
-import { planToText } from './share.js';
+import Share from './Share.jsx';
 import SmogText from './SmogText.jsx';
+import { cityLabel } from './strings.js';
 
-function Bars({ exposure: e }) {
+function Alerts({ alerts, srcLang }) {
   const t = useT();
-  const max = Math.max(e.baseline, e.plan, e.whoGuideline) || 1;
-  const rows = [
-    [t('haze.usual'), e.baseline, 'base'],
-    [t('haze.plan'), e.plan, 'plan'],
+  return alerts.map((a) => (
+    <p key={a.text} className={`alert alert--${a.level}`} role={a.level === 'critical' ? 'alert' : undefined}>
+      <strong>{t(`alert.${a.level}`)}</strong>
+      <span lang={srcLang}>{a.text}</span>
+    </p>
+  ));
+}
+
+/** The three action lists, numbered on from one another so the entrance animation flows down the page. */
+function ActionGroups({ plan, topIds, srcLang }) {
+  const t = useT();
+  const groups = [
+    ['group.routine', plan.routine],
+    ['group.indoor', plan.indoor],
+    ['group.alternatives', plan.alternatives],
   ];
-  return (
-    <div className="bars">
-      {rows.map(([label, value, kind]) => (
-        <div className="bars__row" key={kind}>
-          <span className="bars__label">{label}</span>
-          <span className="bars__track" aria-hidden="true">
-            <span
-              className={`bars__fill bars__fill--${kind}`}
-              style={{ '--p': Math.max(0.02, value / max) }}
-            />
-          </span>
-          <strong className="bars__value num">{value} µg/m³</strong>
-        </div>
-      ))}
-    </div>
-  );
+  let offset = 0;
+  return groups.map(([titleKey, items]) => {
+    const start = offset;
+    offset += items.length;
+    return (
+      <ActionGroup
+        key={titleKey}
+        title={t(titleKey)}
+        items={items}
+        topIds={topIds}
+        offset={start}
+        srcLang={srcLang}
+      />
+    );
+  });
 }
 
-function ActionGroup({ title, items, topIds, offset, srcLang }) {
-  const t = useT();
-  const lang = useLang();
-  if (!items.length) return null;
-  return (
-    <section className="actions" aria-labelledby={`g-${offset}`}>
-      <h3 id={`g-${offset}`}>{title}</h3>
-      <ul className="actions__list" lang={srcLang}>
-        {items.map((a, i) => {
-          const isTop = topIds.includes(a.id);
-          return (
-            <li className={`act${isTop ? ' act--top' : ''}`} key={a.id} style={{ '--i': offset + i }}>
-              <h4>
-                {a.title}
-                {isTop ? (
-                  <span className="act__tag" lang={lang}>
-                    {t('act.top')}
-                  </span>
-                ) : null}
-              </h4>
-              <p>{a.detail}</p>
-              <p className="act__impact">
-                <strong lang={lang}>{t('act.impact')}</strong>
-                {a.impact}
-              </p>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
-/** Print the plan, or copy it as plain text for a family or RWA chat. */
-function Share({ result }) {
-  const t = useT();
-  const lang = useLang();
-  const [note, setNote] = useState('');
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(planToText(result, lang));
-      setNote(t('share.copied'));
-    } catch {
-      setNote(t('share.copyFail'));
-    }
-  };
-  return (
-    <div className="share">
-      <p className="share__hint">{t('share.hint')}</p>
-      <div className="share__btns">
-        <button type="button" className="btn" onClick={() => window.print()}>
-          {t('share.print')}
-        </button>
-        <button type="button" className="btn" onClick={copy}>
-          {t('share.copy')}
-        </button>
-      </div>
-      <p className="share__note" role="status">
-        {note}
-      </p>
-    </div>
-  );
-}
-
-/** The plan: headline, alerts, briefing, the haze-view switch with exposure bars, then the action lists. */
+/** The plan: headline, alerts, briefing, exposure with the haze-view switch, then the action lists. */
 const Results = forwardRef(function Results({ result, hazeView, onHazeView, density }, ref) {
   const t = useT();
   const lang = useLang();
-  const { air, exposure: e, plan, briefing } = result;
-  const top = briefing.topActionIds;
-  const briefingLabel = briefing.source === 'gemini' ? t('briefing.gemini') : t('briefing.rules');
+  const { air, plan, briefing } = result;
   const srcLang = result.textLang; // the language the server wrote the plan, alerts, assumptions and disclaimer in
   const translationNote = result.translation ? t(`translation.${result.translation}`) : '';
-  const cat = t(`band.${air.levelIndex}`);
 
   return (
     <div className="results">
@@ -117,101 +62,25 @@ const Results = forwardRef(function Results({ result, hazeView, onHazeView, dens
 
       <p className="results__air">
         <strong className="results__aqi num" data-level={air.levelIndex}>
-          {t('results.aqi', { aqi: air.aqi, cat })}
+          {t('results.aqi', { aqi: air.aqi, cat: t(`band.${air.levelIndex}`) })}
         </strong>{' '}
         <span lang={lang}>{air.healthImpact}</span>
       </p>
 
-      {plan.alerts.map((a) => (
-        <p
-          key={a.text}
-          className={`alert alert--${a.level}`}
-          role={a.level === 'critical' ? 'alert' : undefined}
-        >
-          <strong>
-            {t(`alert.${a.level === 'critical' ? 'critical' : a.level === 'warning' ? 'warning' : 'info'}`)}
-          </strong>
-          <span lang={srcLang}>{a.text}</span>
-        </p>
-      ))}
+      <Alerts alerts={plan.alerts} srcLang={srcLang} />
 
       <div className="briefing">
         <p lang={briefing.lang}>{briefing.text}</p>
-        <p className="briefing__source">{briefingLabel}</p>
+        <p className="briefing__source">
+          {briefing.source === 'gemini' ? t('briefing.gemini') : t('briefing.rules')}
+        </p>
       </div>
 
       <Share result={result} />
-
-      <section className="exposure" aria-labelledby="exposure-title">
-        <h3 id="exposure-title">{t('exposure.title')}</h3>
-        <fieldset className="view">
-          <legend>{t('haze.legend')}</legend>
-          <label className="view__opt">
-            <input
-              type="radio"
-              name="hazeView"
-              value="usual"
-              checked={hazeView === 'usual'}
-              onChange={() => onHazeView('usual')}
-            />
-            <span>{t('haze.usual')}</span>
-          </label>
-          <label className="view__opt">
-            <input
-              type="radio"
-              name="hazeView"
-              value="plan"
-              checked={hazeView === 'plan'}
-              onChange={() => onHazeView('plan')}
-            />
-            <span>{t('haze.plan')}</span>
-          </label>
-        </fieldset>
-        <p className="exposure__note">
-          {hazeView === 'plan' ? t('haze.notePlan', { aqi: air.aqi }) : t('haze.noteUsual', { aqi: air.aqi })}
-        </p>
-        <p>
-          {t('exposure.body', {
-            base: e.baseline,
-            plan: e.plan,
-            pct: e.reductionPct,
-            who: e.whoGuideline,
-            india: e.indiaStandard,
-          })}
-        </p>
-        <Bars exposure={e} />
-        <details>
-          <summary>{t('exposure.how')}</summary>
-          <ul lang={srcLang}>
-            {e.assumptions.map((s) => (
-              <li key={s}>{s}</li>
-            ))}
-          </ul>
-        </details>
-      </section>
+      <ExposureSection result={result} hazeView={hazeView} onHazeView={onHazeView} />
 
       {translationNote ? <p className="results__english">{translationNote}</p> : null}
-      <ActionGroup
-        title={t('group.routine')}
-        items={plan.routine}
-        topIds={top}
-        offset={0}
-        srcLang={srcLang}
-      />
-      <ActionGroup
-        title={t('group.indoor')}
-        items={plan.indoor}
-        topIds={top}
-        offset={plan.routine.length}
-        srcLang={srcLang}
-      />
-      <ActionGroup
-        title={t('group.alternatives')}
-        items={plan.alternatives}
-        topIds={top}
-        offset={plan.routine.length + plan.indoor.length}
-        srcLang={srcLang}
-      />
+      <ActionGroups plan={plan} topIds={briefing.topActionIds} srcLang={srcLang} />
 
       {plan.totals.co2SavedKgPerWeek > 0 ? (
         <p className="totals">

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DEFAULTS as SERVER_DEFAULTS } from '../src/limits.js';
 import { getCities } from './api.js';
 import AskPanel from './AskPanel.jsx';
 import { usePrefersReducedMotion, useLiveAir, useLowPower } from './hooks.js';
 import { LangContext } from './i18n.js';
 import { clearedDensity, densityFor } from './lib.js';
-import LangToggle from './LangToggle.jsx';
 import PixelCity from './PixelCity.jsx';
 import PlanForm from './PlanForm.jsx';
 import Readout, { BandScale } from './Readout.jsx';
@@ -13,36 +11,11 @@ import Results from './Results.jsx';
 import RightNow from './RightNow.jsx';
 import Smoke from './Smoke.jsx';
 import SmogText from './SmogText.jsx';
-import { cityLabel, LANGS, translate } from './strings.js';
+import TopBar from './TopBar.jsx';
+import { DEFAULTS, saveLang, storedLang } from './settings.js';
+import { cityLabel, translate } from './strings.js';
 import { usePlanRequest } from './usePlanRequest.js';
 
-const LANG_KEY = 'clearbreath.lang';
-
-function storedLang() {
-  try {
-    const v = localStorage.getItem(LANG_KEY);
-    return LANGS.includes(v) ? v : 'en';
-  } catch {
-    return 'en'; // storage can be blocked; the page works without it
-  }
-}
-
-const DEFAULTS = {
-  city: 'delhi',
-  adults: String(SERVER_DEFAULTS.adults),
-  children: String(SERVER_DEFAULTS.children),
-  seniors: String(SERVER_DEFAULTS.seniors),
-  conditions: [],
-  commute: SERVER_DEFAULTS.commute,
-  commuteKm: String(SERVER_DEFAULTS.commuteKm),
-  cooking: SERVER_DEFAULTS.cooking,
-  heating: SERVER_DEFAULTS.heating,
-  hasPurifier: false,
-  hasN95: false,
-  lang: 'en',
-  notes: '',
-  manualPm25: '',
-};
 const FALLBACK_CITIES = [{ key: 'delhi', name: 'Delhi', state: 'Delhi' }];
 const NO_READING_DENSITY = 0.55; // until the first live reading arrives
 
@@ -89,11 +62,7 @@ export default function App() {
   // Switching language rebuilds an existing plan so its briefing is written in the new language too.
   const changeLang = (next) => {
     if (next === lang) return;
-    try {
-      localStorage.setItem(LANG_KEY, next);
-    } catch {
-      /* storage blocked: the choice just lasts for this visit */
-    }
+    saveLang(next);
     const nextValues = { ...values, lang: next };
     setValues(nextValues);
     if (result) build(nextValues, { focus: false }); // rebuilding in the new language must not pull focus away from the toggle
@@ -119,27 +88,15 @@ export default function App() {
           {t('skip')}
         </a>
 
-        <header className="bar">
-          {lowPower ? null : (
-            <Smoke variant="band" className="bar__smoke" density={density} boost={0.2} paused={paused} />
-          )}
-          <p className="bar__brand" lang="en">
-            ClearBreath
-          </p>
-          <div className="bar__tools">
-            <LangToggle lang={lang} onChange={changeLang} label={t('lang.label')} />
-            {reduced ? null : (
-              <button
-                type="button"
-                className="btn btn--quiet"
-                aria-pressed={paused}
-                onClick={() => setPaused((p) => !p)}
-              >
-                {t('pause')}
-              </button>
-            )}
-          </div>
-        </header>
+        <TopBar
+          lowPower={lowPower}
+          density={density}
+          paused={paused}
+          reduced={reduced}
+          lang={lang}
+          onLang={changeLang}
+          onTogglePause={() => setPaused((p) => !p)}
+        />
 
         <main id="main">
           <div className="page">
