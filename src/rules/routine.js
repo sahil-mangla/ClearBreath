@@ -3,7 +3,7 @@ import { act, fmtHour, needsMask } from './helpers.js';
 
 /** Daily-routine actions. Each builder takes the plan context and returns one action, or null when it does not apply. */
 
-function windowAction({ pm25, w: forecast, polluted }) {
+function windowAction({ pm25, forecast, polluted }) {
   if (!forecast || !polluted) return null;
   // Compared with the air right now, not the day's worst hour.
   const gain = pm25 > 0 ? Math.round((1 - forecast.bestPm25 / pm25) * 100) : 0;
@@ -36,22 +36,22 @@ function enjoyAction({ polluted }) {
   );
 }
 
-function maskAction({ L, p }) {
-  if (!needsMask(L, p)) return null;
+function maskAction({ levelIndex, profile }) {
+  if (!needsMask(levelIndex, profile)) return null;
   return act(
     'r-mask',
     1,
-    p.hasN95 ? 'Wear your N95 outdoors, every time' : 'Get a fitted N95/FFP2 mask for outdoor trips',
-    p.hasN95
+    profile.hasN95 ? 'Wear your N95 outdoors, every time' : 'Get a fitted N95/FFP2 mask for outdoor trips',
+    profile.hasN95
       ? 'Wear it snugly over nose and chin with no gaps. Replace it when it is damp, dirty or hard to breathe through. Cloth and surgical masks filter far less.'
       : 'Choose an N95/FFP2 (without an exhalation-valve gap) and check the seal. Cloth and surgical masks filter far less. Kids need a small-size mask that fits.',
     'Certified N95s capture at least 95% of fine particles in lab tests; with real-world fit expect roughly 80-90%.',
-    { hasN95: p.hasN95 },
+    { hasN95: profile.hasN95 },
   );
 }
 
-function conditionsAction({ p, polluted }) {
-  const conditions = CONDITION_ORDER.filter((c) => p.conditions.includes(c));
+function conditionsAction({ profile, polluted }) {
+  const conditions = CONDITION_ORDER.filter((c) => profile.conditions.includes(c));
   if (!polluted || conditions.length === 0) return null;
   return act(
     'r-conditions',
@@ -63,15 +63,15 @@ function conditionsAction({ p, polluted }) {
   );
 }
 
-function exerciseAction({ p, poor }) {
+function exerciseAction({ profile, poor }) {
   if (!poor) return null;
   return act(
     'r-exercise',
     2,
-    p.children > 0 ? "Move workouts and kids' play indoors" : 'Move workouts indoors',
+    profile.children > 0 ? "Move workouts and kids' play indoors" : 'Move workouts indoors',
     'Do yoga, skipping, stretching or stair-climbing at home. Ask the school to shift PE and assembly indoors on Poor or worse days.',
     'Hard exercise multiplies the air you breathe several times over resting, so an outdoor workout is a big extra dose of smog.',
-    { kids: p.children > 0 },
+    { kids: profile.children > 0 },
   );
 }
 
@@ -125,14 +125,14 @@ const COMMUTE_TIPS = {
   ],
 };
 
-function commuteAction({ p, polluted }) {
-  if (!polluted && p.commute !== 'wfh') return null;
-  const [title, detail] = COMMUTE_TIPS[p.commute];
+function commuteAction({ profile, polluted }) {
+  if (!polluted && profile.commute !== 'wfh') return null;
+  const [title, detail] = COMMUTE_TIPS[profile.commute];
   const impact =
-    p.commute === 'wfh'
+    profile.commute === 'wfh'
       ? 'Skips roughly 1-3 hours of roadside air a day.'
       : 'Roadside air is usually the most polluted air of your day, so small commute changes pay back the most.';
-  return act('r-commute', 2, title, detail, impact, { mode: p.commute });
+  return act('r-commute', 2, title, detail, impact, { mode: profile.commute });
 }
 
 const BUILDERS = [

@@ -20,7 +20,7 @@ Winter smog guidance for Indian cities, in English and Hindi, with the impact of
 
 </div>
 
-**Prompt Wars, Challenge 6: GenAI Urban Air Quality Assistant.** Quick links: [Judging map](#judging-map) · [Run it](#run-it-in-two-minutes) · [How it works](#how-it-works) · [CI/CD](#cicd-and-deployment) · [Design decisions](#design-decisions-and-trade-offs)
+**Prompt Wars, Challenge 6: GenAI Urban Air Quality Assistant.** Quick links: [Judging map](#judging-map) · [Run it](#run-it-in-two-minutes) · [How it works](#how-it-works) · [CI/CD](#cicd-and-deployment)
 
 ## The problem
 
@@ -211,17 +211,6 @@ Details and the checks that enforce them are in [CODE_QUALITY.md](CODE_QUALITY.m
 - On any failure (no key, timeout, rate limit, validation, exhausted budget) the app falls back to built-in text. The built-in Hindi is a pure function of the action id and its parameters.
 - The response reports whether the Hindi came from `gemini`, `builtin` or `mixed`, and the page says so.
 - The assistant is told it is not a doctor, and households with vulnerable members are told when to seek care.
-
-## Design decisions and trade-offs
-
-| Decision | Why |
-|---|---|
-| Rules engine first, LLM second | Health advice should not depend on a model's mood. Gemini adds tone and translation, and the app is complete without it. |
-| Fixed city list instead of geocoding | Bounds outbound requests and removes the SSRF surface, at the cost of coverage (22 cities). |
-| Modelled air data (CAMS via Open-Meteo) | Free, keyless and available for every listed city. The UI says it can differ from CPCB station readings and why. |
-| Zero runtime dependencies | Smaller attack surface, faster cold starts, nothing to patch. React and esbuild are build-time only. |
-| Built-in Hindi catalogue as the fallback | Keeps the Hindi page deterministic and available when Gemini is busy, instead of silently showing English. |
-| Vercel CDN for static files, one function for the API | Static assets are fast and free to serve; only the API needs compute, and it runs close to users in Mumbai. |
 
 ## Data and assumptions
 

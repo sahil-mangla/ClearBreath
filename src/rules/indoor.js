@@ -2,8 +2,8 @@ import { act, fmtHour } from './helpers.js';
 
 /** Indoor-air actions. Each builder takes the plan context and returns one action, or null when it does not apply. */
 
-function heatingSafetyAction({ p }) {
-  if (p.heating !== 'wood_coal') return null;
+function heatingSafetyAction({ profile }) {
+  if (profile.heating !== 'wood_coal') return null;
   return act(
     'i-heating-safety',
     1,
@@ -24,7 +24,7 @@ function sealAction({ polluted }) {
   );
 }
 
-function ventilateAction({ w: forecast, polluted }) {
+function ventilateAction({ forecast, polluted }) {
   if (!polluted) {
     return act(
       'i-ventilate',
@@ -47,8 +47,8 @@ function ventilateAction({ w: forecast, polluted }) {
   );
 }
 
-function purifierAction({ p, polluted }) {
-  if (p.hasPurifier) {
+function purifierAction({ profile, polluted }) {
+  if (profile.hasPurifier) {
     return act(
       'i-purifier',
       2,
@@ -69,25 +69,25 @@ function purifierAction({ p, polluted }) {
   );
 }
 
-function cleanRoomTitle(p) {
-  if (p.children > 0 && p.seniors > 0) return 'Make one "clean room" for kids and elders';
-  return p.children > 0 ? 'Make a "clean room" for the kids' : 'Make a "clean room" for the vulnerable';
+function cleanRoomTitle(profile) {
+  if (profile.children > 0 && profile.seniors > 0) return 'Make one "clean room" for kids and elders';
+  return profile.children > 0 ? 'Make a "clean room" for the kids' : 'Make a "clean room" for the vulnerable';
 }
 
-function cleanRoomAction({ p, poor, vulnerable }) {
+function cleanRoomAction({ profile, poor, vulnerable }) {
   if (!vulnerable || !poor) return null;
   return act(
     'i-clean-room',
     1,
-    cleanRoomTitle(p),
+    cleanRoomTitle(profile),
     'Pick one bedroom, keep it sealed, run the purifier there, and let it be the place for sleeping, homework and rest during smog spikes.',
     'Concentrates your purifier benefit where the most vulnerable lungs spend most hours, including 8+ hours of sleep.',
-    { kids: p.children > 0, elders: p.seniors > 0 },
+    { kids: profile.children > 0, elders: profile.seniors > 0 },
   );
 }
 
-function cookingAction({ p }) {
-  if (p.cooking === 'biomass') {
+function cookingAction({ profile }) {
+  if (profile.cooking === 'biomass') {
     return act(
       'i-cooking',
       1,
@@ -97,7 +97,7 @@ function cookingAction({ p }) {
       { biomass: true },
     );
   }
-  if (p.cooking === 'lpg' || p.cooking === 'png') {
+  if (profile.cooking === 'lpg' || profile.cooking === 'png') {
     return act(
       'i-cooking',
       3,

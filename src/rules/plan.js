@@ -1,13 +1,10 @@
 import { CITIES } from '../cities.js';
 import { alertsFor } from './alerts.js';
 import { alternativeActions, weeklyCo2Saved } from './alternatives.js';
-import { SMOG_MONTHS, STUBBLE_MONTHS, WORK_WEEKS_PER_YEAR } from './constants.js';
+import { POLLUTED, POOR, SMOG_MONTHS, STUBBLE_MONTHS, WORK_WEEKS_PER_YEAR } from './constants.js';
 import { isVulnerable, istMonth, top } from './helpers.js';
 import { indoorActions } from './indoor.js';
 import { routineActions } from './routine.js';
-
-const POOR = 3; // CPCB "Poor" and worse
-const POLLUTED = 2; // CPCB "Moderate" and worse
 
 /** Everything the action builders need, computed once from the request. */
 function planContext({ levelIndex, pm25, profile, cityKey, window: forecast, now }) {
@@ -15,10 +12,10 @@ function planContext({ levelIndex, pm25, profile, cityKey, window: forecast, now
   const month = istMonth(now);
   const smogRegion = city.region !== 'other';
   return {
-    L: levelIndex,
+    levelIndex,
     pm25,
-    p: profile,
-    w: forecast,
+    profile,
+    forecast,
     city,
     polluted: levelIndex >= POLLUTED,
     poor: levelIndex >= POOR,

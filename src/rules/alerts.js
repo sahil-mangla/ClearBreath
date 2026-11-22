@@ -5,17 +5,17 @@ const SEVERE_TEXT =
 const VERY_POOR_TEXT =
   'Very poor air for sensitive people: keep outdoor time short, keep rescue medicines handy, and stay in your cleanest room.';
 
-function airAlert({ L, poor, vulnerable }) {
-  if (L < 4 && !(poor && vulnerable)) return null;
+function airAlert({ levelIndex, poor, vulnerable }) {
+  if (levelIndex < 4 && !(poor && vulnerable)) return null;
   return {
-    key: L >= 5 ? 'severe' : 'verypoor',
+    key: levelIndex >= 5 ? 'severe' : 'verypoor',
     level: 'critical',
-    text: L >= 5 ? SEVERE_TEXT : VERY_POOR_TEXT,
+    text: levelIndex >= 5 ? SEVERE_TEXT : VERY_POOR_TEXT,
   };
 }
 
-function carbonMonoxideAlert({ p }) {
-  if (p.heating !== 'wood_coal') return null;
+function carbonMonoxideAlert({ profile }) {
+  if (profile.heating !== 'wood_coal') return null;
   return {
     key: 'co',
     level: 'critical',

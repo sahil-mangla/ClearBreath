@@ -49,3 +49,7 @@ export const CONDITION_ORDER = Object.keys(CONDITION_ADVICE);
 /** Month indexes (0 = January) in which smog and crop-residue burning are expected. */
 export const SMOG_MONTHS = [9, 10, 11, 0, 1];
 export const STUBBLE_MONTHS = [9, 10];
+
+/** CPCB level indexes the rules key off: 2 is "Moderate" and worse, 3 is "Poor" and worse. */
+export const POLLUTED = 2;
+export const POOR = 3;

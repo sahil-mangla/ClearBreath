@@ -1,3 +1,5 @@
+import { POLLUTED, POOR } from './constants.js';
+
 /** Small pure helpers shared by the rules modules. */
 
 /** @returns {boolean} true when the household has a child, a senior or a listed health condition. */
@@ -6,7 +8,7 @@ export const isVulnerable = (profile) =>
 
 /** The one rule that decides whether the plan recommends a mask, so the exposure model cannot disagree with it. */
 export const needsMask = (levelIndex, profile) =>
-  levelIndex >= 3 || (levelIndex >= 2 && isVulnerable(profile));
+  levelIndex >= POOR || (levelIndex >= POLLUTED && isVulnerable(profile));
 
 /** Month (0-11) in India Standard Time. */
 export const istMonth = (date) =>
@@ -23,16 +25,16 @@ export function fmtHour(hour) {
 export const round1 = (n) => Math.round(n * 10) / 10;
 
 /**
- * One recommendation. `p` holds the figures and variant flags the text was built from, so the built-in
+ * One recommendation. `p` (the `params` argument) holds the figures and variant flags the text was built from, so the built-in
  * Hindi catalogue (hi.js) can rebuild the same advice deterministically. It is stripped before the response.
  */
-export const act = (id, priority, title, detail, impact, p = {}) => ({
+export const act = (id, priority, title, detail, impact, params = {}) => ({
   id,
   priority,
   title,
   detail,
   impact,
-  p,
+  p: params,
 });
 
 /** The `n` highest-priority actions (lowest number first); ties keep their original order. */

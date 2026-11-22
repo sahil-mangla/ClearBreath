@@ -6,6 +6,7 @@ import {
   INDIA_PM25_24H,
   INDOOR_RATIO,
   MASK_FACTOR,
+  POLLUTED,
   WHO_PM25_24H,
 } from './constants.js';
 import { needsMask, round1 } from './helpers.js';
@@ -53,7 +54,7 @@ export function estimateExposure({
   const indoorH = Math.max(0, 24 - commuteH - OTHER_OUTDOOR_HOURS);
 
   // The plan only changes what the advice actually asks for: no mask, shut windows or timing on a clean day.
-  const polluted = levelIndex >= 2;
+  const polluted = levelIndex >= POLLUTED;
   const masked = needsMask(levelIndex, profile);
   const bestPm = forecast && polluted ? Math.min(pm25, forecast.bestPm25) : pm25;
   const baselineIndoor = profile.hasPurifier ? INDOOR_RATIO.baselinePurifier : INDOOR_RATIO.baselineNone;

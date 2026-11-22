@@ -12,20 +12,20 @@ export function weeklyCo2Saved(profile) {
   return round1(perPassengerKm * profile.commuteKm * 2 * WORK_DAYS_PER_WEEK);
 }
 
-function commuteAction({ p }) {
-  const km = p.commuteKm;
-  if (p.commute === 'car' || p.commute === 'auto_cab') {
-    const week = weeklyCo2Saved(p);
+function commuteAction({ profile }) {
+  const km = profile.commuteKm;
+  if (profile.commute === 'car' || profile.commute === 'auto_cab') {
+    const week = weeklyCo2Saved(profile);
     return act(
       'a-commute',
       2,
       'Swap to metro or bus, or carpool a few days a week',
       `Your ${km} km each-way trip is a good candidate. Shifting it to metro/bus, even on smog days only, cuts both tailpipe pollution and carbon.`,
       `Roughly ${week} kg CO2 per week (about ${Math.round(week * WORK_WEEKS_PER_YEAR)} kg per year) if you switch fully (approximate, per-passenger averages).`,
-      { mode: p.commute, km, week, year: Math.round(week * WORK_WEEKS_PER_YEAR) },
+      { mode: profile.commute, km, week, year: Math.round(week * WORK_WEEKS_PER_YEAR) },
     );
   }
-  if (p.commute === 'two_wheeler') {
+  if (profile.commute === 'two_wheeler') {
     return act(
       'a-commute',
       2,
@@ -36,19 +36,21 @@ function commuteAction({ p }) {
     );
   }
   // bus_metro, walk_cycle and wfh: already low-emission, so compare with driving the same distance alone.
-  const avoided = round1((EMISSION_FACTORS.car - EMISSION_FACTORS[p.commute]) * km * 2 * WORK_DAYS_PER_WEEK);
+  const avoided = round1(
+    (EMISSION_FACTORS.car - EMISSION_FACTORS[profile.commute]) * km * 2 * WORK_DAYS_PER_WEEK,
+  );
   return act(
     'a-commute',
     4,
     'Keep it up: your commute is already low-emission',
     'You are already doing the best thing for the air. Encourage a colleague or neighbour to join you on bus, metro or on foot.',
     `Compared with driving the same ${km} km alone, you already avoid about ${avoided} kg CO2 a week.`,
-    { mode: p.commute, km, week: avoided },
+    { mode: profile.commute, km, week: avoided },
   );
 }
 
-function idleAction({ p }) {
-  if (!MOTORISED.includes(p.commute)) return null;
+function idleAction({ profile }) {
+  if (!MOTORISED.includes(profile.commute)) return null;
   return act(
     'a-idle',
     3,
@@ -58,8 +60,8 @@ function idleAction({ p }) {
   );
 }
 
-function warmthAction({ p }) {
-  if (p.heating === 'electric') return null;
+function warmthAction({ profile }) {
+  if (profile.heating === 'electric') return null;
   return act(
     'a-warm',
     3,
@@ -69,9 +71,9 @@ function warmthAction({ p }) {
   );
 }
 
-function cookingAction({ p }) {
-  if (p.cooking !== 'lpg' && p.cooking !== 'biomass') return null;
-  const biomass = p.cooking === 'biomass';
+function cookingAction({ profile }) {
+  if (profile.cooking !== 'lpg' && profile.cooking !== 'biomass') return null;
+  const biomass = profile.cooking === 'biomass';
   return act(
     'a-cook',
     4,
